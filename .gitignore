@@ -1,0 +1,80 @@
+# Build outputs (any subfolder)
+**/build/
+**/out/
+**/target/
+**/bin/
+**/dist/
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+**/*.o
+**/*.obj
+**/*.a
+**/*.lib
+
+**/*.md
+*.md
+
+# Gradle
+**/.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+**/gradle.lockfile
+**/*.lockfile
+
+# IDEs
+**/.idea/
+**/.vscode/
+**/*.iml
+**/*.ipr
+**/*.iws
+**/.project
+**/.classpath
+**/.settings/
+**/*.swp
+**/*.swo
+**/*~
+
+# Cursor
+**/.cursor/
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
+**/*.lnk
+
+# Logs & temp
+**/*.log
+**/logs/
+**/*.tmp
+**/*.temp
+**/*.bak
+**/*.orig
+**/*.rej
+**/*.cache
+**/.cache/
+
+# Lock files
+**/*.lock
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+
+# Binary & data
+**/*.bin
+**/*.dat
+**/*.db
+**/*.sqlite
+**/*.h2.db
+
+# JVM / Java runtime
+**/hs_err_pid*
+**/*.hprof
+**/*.dump
+**/.attach_pid*
+**/replay_pid*
