@@ -22,6 +22,7 @@ repositories {
 dependencies {
     implementation("org.ow2.asm:asm:9.6")
     implementation("org.ow2.asm:asm-commons:9.6")
+    implementation("org.yaml:snakeyaml:2.2")
 }
 
 tasks.test {
@@ -52,5 +53,6 @@ tasks.register<Copy>("dist") {
         rename { "st3ix-obfuscator.jar" }
     }
     from("scripts")
+    from("config.yml.example")
     into(layout.buildDirectory.dir("dist"))
 }

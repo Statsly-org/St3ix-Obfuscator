@@ -1,5 +1,7 @@
 package st3ix.obfuscator.cli;
 
+import st3ix.obfuscator.config.ConfigLoader;
+import st3ix.obfuscator.config.ObfuscatorConfig;
 import st3ix.obfuscator.core.ObfuscationPipeline;
 
 import java.nio.file.Path;
@@ -28,8 +30,9 @@ public final class CliRunner {
             System.exit(1);
         }
         try {
+            ObfuscatorConfig config = ConfigLoader.load();
             ObfuscationPipeline pipeline = new ObfuscationPipeline();
-            pipeline.run(Path.of(parsed.inputPath), Path.of(parsed.outputPath));
+            pipeline.run(Path.of(parsed.inputPath), Path.of(parsed.outputPath), config);
             System.out.println("Done. Output: " + parsed.outputPath);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());

@@ -1,5 +1,6 @@
 package st3ix.obfuscator.core;
 
+import st3ix.obfuscator.config.ObfuscatorConfig;
 import st3ix.obfuscator.io.JarProcessor;
 import st3ix.obfuscator.io.JarProcessor.ClassEntry;
 import st3ix.obfuscator.io.JarProcessor.JarContents;
@@ -24,9 +25,21 @@ public final class ObfuscationPipeline {
     /**
      * Runs obfuscation on the input JAR and writes to the output path.
      */
-    public void run(Path inputPath, Path outputPath) throws IOException {
+    public void run(Path inputPath, Path outputPath, ObfuscatorConfig config) throws IOException {
         Logger.info("Reading input JAR: %s", inputPath);
         JarContents contents = JarProcessor.read(inputPath);
+
+        if (!config.classRenamingEnabled()) {
+            Logger.info("Class renaming disabled by config. Copying JAR without renaming.");
+            List<ResourceEntry> resources = contents.manifest() != null
+                ? contents.resources().stream()
+                    .filter(r -> !"META-INF/MANIFEST.MF".equalsIgnoreCase(r.path()))
+                    .toList()
+                : contents.resources();
+            JarProcessor.write(outputPath, contents.classes(), resources, contents.manifest());
+            Logger.info("Obfuscation complete.");
+            return;
+        }
 
         List<String> classNames = contents.classes().stream()
             .map(ClassEntry::internalName)
@@ -35,6 +48,7 @@ public final class ObfuscationPipeline {
 
         Logger.info("Building class mapping (%d classes)", classNames.size());
         ClassMapping mapping = new ClassMapping();
+        mapping.addExcludes(config.excludeClasses());
         for (String name : classNames) {
             mapping.map(name);
         }
@@ -58,10 +72,10 @@ public final class ObfuscationPipeline {
 
         Logger.step("Step 2/2: Writing output JAR: %s", outputPath);
         Manifest manifest = updateMainClass(contents.manifest(), mapping);
-        List<ResourceEntry> resources = contents.resources().stream()
-            .filter(r -> !r.path().equalsIgnoreCase("META-INF/MANIFEST.MF"))
+        List<ResourceEntry> resourcesToWrite = contents.resources().stream()
+            .filter(r -> !"META-INF/MANIFEST.MF".equalsIgnoreCase(r.path()))
             .toList();
-        JarProcessor.write(outputPath, transformed, resources, manifest);
+        JarProcessor.write(outputPath, transformed, resourcesToWrite, manifest);
         Logger.info("Obfuscation complete.");
     }
 

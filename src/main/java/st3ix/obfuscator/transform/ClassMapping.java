@@ -1,22 +1,52 @@
 package st3ix.obfuscator.transform;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Maps original class internal names to obfuscated names.
+ * Excludes JDK, common libraries (Paper, Spigot, Minecraft), and config-defined patterns.
  */
 public final class ClassMapping {
 
-    private static final String[] EXCLUDED_PREFIXES = {
-        "java/", "javax/", "jdk/", "sun/", "com/sun/", "org/xml/", "org/w3c/"
+    /**
+     * Library/API packages that must never be renamed. External APIs expect these names.
+     */
+    private static final String[] LIBRARY_PREFIXES = {
+        "java/", "javax/", "jdk/", "sun/", "com/sun/",
+        "org/xml/", "org/w3c/",
+        "org/bukkit/", "org/spigotmc/", "net/minecraft/",
+        "io/papermc/", "com/destroystokyo/",
+        "org/apache/", "com/google/", "org/springframework/"
     };
 
+    private final List<String> excludePrefixes = new ArrayList<>();
     private final Map<String, String> oldToNew = new HashMap<>();
     private final NameGenerator nameGen = new NameGenerator();
 
+    public ClassMapping() {
+        for (String p : LIBRARY_PREFIXES) {
+            excludePrefixes.add(p);
+        }
+    }
+
     /**
-     * Registers a class for renaming. JDK and library classes are skipped.
+     * Adds exclude patterns from config. Accepts dot or slash notation (e.g. org.bukkit or org/bukkit).
+     */
+    public void addExcludes(List<String> patterns) {
+        if (patterns == null) return;
+        for (String p : patterns) {
+            if (p == null || p.isBlank()) continue;
+            String internal = p.trim().replace('.', '/');
+            if (!internal.endsWith("/")) internal += "/";
+            excludePrefixes.add(internal);
+        }
+    }
+
+    /**
+     * Registers a class for renaming. Excluded classes are skipped.
      *
      * @param internalName ASM internal name (e.g. example/Main)
      * @return the new internal name, or the original if excluded
@@ -59,8 +89,9 @@ public final class ClassMapping {
     }
 
     private boolean isExcluded(String internalName) {
-        for (String prefix : EXCLUDED_PREFIXES) {
-            if (internalName.startsWith(prefix)) {
+        for (String prefix : excludePrefixes) {
+            String base = prefix.endsWith("/") ? prefix.substring(0, prefix.length() - 1) : prefix;
+            if (internalName.equals(base) || internalName.startsWith(base + "/") || internalName.startsWith(base + "$")) {
                 return true;
             }
         }
@@ -68,7 +99,7 @@ public final class ClassMapping {
     }
 
     /**
-     * Returns the mapping as a map for ASM SimpleRemapper (old internal -> new internal).
+     * Returns the mapping for ASM SimpleRemapper (old internal -> new internal).
      */
     public Map<String, String> asRemapperMap() {
         Map<String, String> result = new HashMap<>();
