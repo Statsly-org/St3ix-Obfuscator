@@ -13,6 +13,7 @@ public final class DemoService {
         String message = buildMessage("Hello", "World");
         System.out.println(message);
         processData(42, true);
+        printMagicNumbers();
     }
 
     private String buildMessage(String a, String b) {
@@ -23,6 +24,14 @@ public final class DemoService {
         if (flag) {
             System.out.println("Processed: " + (value * 2));
         }
+    }
+
+    /** Obfuscation targets: 100, 256, 1337 - visible in decompiled bytecode before obfuscation */
+    private void printMagicNumbers() {
+        int port = 25565;
+        int seed = 12345;
+        int threshold = 1000;
+        System.out.println("Numbers (obfuscated in bytecode): port=" + port + ", seed=" + seed + ", threshold=" + threshold);
     }
 
     public String getSecretKey() {

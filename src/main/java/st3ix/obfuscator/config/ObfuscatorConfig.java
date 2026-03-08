@@ -8,13 +8,22 @@ import java.util.List;
  */
 public record ObfuscatorConfig(
     boolean classRenamingEnabled,
+    boolean numberObfuscationEnabled,
+    boolean classNamesRandom,
+    int classNameLength,
+    boolean numberKeyRandom,
     List<String> excludeClasses
 ) {
+    private static final int DEFAULT_CLASS_NAME_LENGTH = 6;
+    private static final int MIN_CLASS_NAME_LENGTH = 1;
+    private static final int MAX_CLASS_NAME_LENGTH = 32;
+
     public ObfuscatorConfig {
         excludeClasses = excludeClasses != null ? List.copyOf(excludeClasses) : Collections.emptyList();
+        classNameLength = Math.max(MIN_CLASS_NAME_LENGTH, Math.min(MAX_CLASS_NAME_LENGTH, classNameLength));
     }
 
     public static ObfuscatorConfig defaults() {
-        return new ObfuscatorConfig(true, List.of());
+        return new ObfuscatorConfig(true, true, false, DEFAULT_CLASS_NAME_LENGTH, false, List.of());
     }
 }

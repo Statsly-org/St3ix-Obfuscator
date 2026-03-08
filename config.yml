@@ -7,11 +7,11 @@ classRenamingEnabled: true
 numberObfuscationEnabled: true
 
 # Class name generation
-classNamesRandom: false   # true = random names per build, false = sequential (a, b, c...)
+classNamesRandom: true  # true = random names per build, false = sequential (a, b, c...)
 classNameLength: 6       # minimum length of class names (1-32). Longer = harder to read.
 
 # Number obfuscation key
-numberKeyRandom: false   # true = random XOR key per build, false = fixed key
+numberKeyRandom: true   # true = random XOR key per build, false = fixed key
 
 # Classes/packages to exclude from renaming.
 # Use dot or slash notation. Prefix matches (org.bukkit excludes org.bukkit.*)

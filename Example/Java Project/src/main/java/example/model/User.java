@@ -11,6 +11,13 @@ public final class User {
     public User(String name, int id) {
         this.name = name;
         this.id = id;
+        validateId(id);
+    }
+
+    private static void validateId(int id) {
+        if (id < 0 || id > 999999) {
+            throw new IllegalArgumentException("ID out of range");
+        }
     }
 
     public String getName() {

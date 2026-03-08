@@ -8,6 +8,7 @@ import st3ix.obfuscator.io.JarProcessor.ResourceEntry;
 import st3ix.obfuscator.log.Logger;
 import st3ix.obfuscator.transform.ClassMapping;
 import st3ix.obfuscator.transform.ClassRenamer;
+import st3ix.obfuscator.transform.NumberObfuscator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,13 +31,25 @@ public final class ObfuscationPipeline {
         JarContents contents = JarProcessor.read(inputPath);
 
         if (!config.classRenamingEnabled()) {
-            Logger.info("Class renaming disabled by config. Copying JAR without renaming.");
+            Logger.info("Class renaming disabled by config.");
+            List<ClassEntry> classesToWrite = contents.classes();
+            if (config.numberObfuscationEnabled()) {
+                Logger.step("Step 1/2: Number obfuscation");
+                NumberObfuscator no = config.numberKeyRandom() ? NumberObfuscator.withRandomKey() : new NumberObfuscator();
+                classesToWrite = contents.classes().stream()
+                    .map(ce -> new ClassEntry(ce.path(), ce.internalName(), no.transform(ce.bytes())))
+                    .toList();
+                Logger.success("Number obfuscation applied");
+                Logger.step("Step 2/2: Writing output JAR: %s", outputPath);
+            } else {
+                Logger.info("Copying JAR without transformations.");
+            }
             List<ResourceEntry> resources = contents.manifest() != null
                 ? contents.resources().stream()
                     .filter(r -> !"META-INF/MANIFEST.MF".equalsIgnoreCase(r.path()))
                     .toList()
                 : contents.resources();
-            JarProcessor.write(outputPath, contents.classes(), resources, contents.manifest());
+            JarProcessor.write(outputPath, classesToWrite, resources, contents.manifest());
             Logger.info("Obfuscation complete.");
             return;
         }
@@ -47,14 +60,21 @@ public final class ObfuscationPipeline {
             .toList();
 
         Logger.info("Building class mapping (%d classes)", classNames.size());
-        ClassMapping mapping = new ClassMapping();
+        ClassMapping mapping = new ClassMapping(config.classNamesRandom(), config.classNameLength());
         mapping.addExcludes(config.excludeClasses());
         for (String name : classNames) {
             mapping.map(name);
         }
 
-        Logger.step("Step 1/2: Class renaming");
+        boolean numberObfEnabled = config.numberObfuscationEnabled();
+        int totalSteps = numberObfEnabled ? 3 : 2;
+        int stepNum = 1;
+
+        Logger.step("Step %d/%d: Class renaming", stepNum++, totalSteps);
         ClassRenamer renamer = new ClassRenamer(mapping);
+        NumberObfuscator numberObfuscator = numberObfEnabled
+            ? (config.numberKeyRandom() ? NumberObfuscator.withRandomKey() : new NumberObfuscator())
+            : null;
         List<ClassEntry> transformed = new ArrayList<>();
         int renamedCount = 0;
         for (ClassEntry ce : contents.classes()) {
@@ -64,13 +84,21 @@ public final class ObfuscationPipeline {
                 Logger.info("  Class renamed: %s -> %s", ce.internalName().replace('/', '.'), newInternal.replace('/', '.'));
                 renamedCount++;
             }
-            byte[] transformedBytes = renamer.transform(ce.bytes());
+            byte[] bytes = renamer.transform(ce.bytes());
+            if (numberObfEnabled) {
+                bytes = numberObfuscator.transform(bytes);
+            }
             String newPath = newInternal + ".class";
-            transformed.add(new ClassEntry(newPath, newInternal, transformedBytes));
+            transformed.add(new ClassEntry(newPath, newInternal, bytes));
         }
-        Logger.info("Class renaming successful. Renamed a total of %d class(es)", renamedCount);
+        Logger.success("Class renaming successful. Renamed a total of %d class(es)", renamedCount);
 
-        Logger.step("Step 2/2: Writing output JAR: %s", outputPath);
+        if (numberObfEnabled) {
+            Logger.step("Step %d/%d: Number obfuscation", stepNum++, totalSteps);
+            Logger.success("Number obfuscation applied");
+        }
+
+        Logger.step("Step %d/%d: Writing output JAR: %s", stepNum, totalSteps, outputPath);
         Manifest manifest = updateMainClass(contents.manifest(), mapping);
         List<ResourceEntry> resourcesToWrite = contents.resources().stream()
             .filter(r -> !"META-INF/MANIFEST.MF".equalsIgnoreCase(r.path()))

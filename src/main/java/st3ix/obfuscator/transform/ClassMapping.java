@@ -24,9 +24,20 @@ public final class ClassMapping {
 
     private final List<String> excludePrefixes = new ArrayList<>();
     private final Map<String, String> oldToNew = new HashMap<>();
-    private final NameGenerator nameGen = new NameGenerator();
+    private final NameGenerator nameGen;
 
     public ClassMapping() {
+        this(false, 1);
+    }
+
+    /**
+     * Creates a mapping with configurable name generation.
+     *
+     * @param namesRandom true for random names, false for sequential
+     * @param nameLength minimum length of generated names (1–32)
+     */
+    public ClassMapping(boolean namesRandom, int nameLength) {
+        this.nameGen = new NameGenerator(namesRandom, nameLength);
         for (String p : LIBRARY_PREFIXES) {
             excludePrefixes.add(p);
         }

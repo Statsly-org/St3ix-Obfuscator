@@ -29,6 +29,14 @@ public final class Logger {
         log("STEP", String.format(format, args), "\033[36m");
     }
 
+    public static void success(String message) {
+        log("OK", message, "\033[92m");
+    }
+
+    public static void success(String format, Object... args) {
+        log("OK", String.format(format, args), "\033[92m");
+    }
+
     public static void warn(String message) {
         log("WARN", message, "\033[33m");
     }
