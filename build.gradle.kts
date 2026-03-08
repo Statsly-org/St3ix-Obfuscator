@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "st3ix"
-version = "0.1.0-SNAPSHOT"
+version = "1.0.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -32,6 +32,7 @@ tasks.test {
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "st3ix.obfuscator.cli.CliRunner"
+        attributes["Implementation-Version"] = version
     }
 }
 
@@ -41,6 +42,7 @@ tasks.register<Jar>("fatJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes["Main-Class"] = "st3ix.obfuscator.cli.CliRunner"
+        attributes["Implementation-Version"] = project.version
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     from(sourceSets.main.get().output)

@@ -23,7 +23,13 @@ public final class StartupDisplay {
      */
     public static void print() {
         System.out.println(BANNER);
+        System.out.println("  Version: " + getVersion());
         printSystemInfo();
+    }
+
+    private static String getVersion() {
+        String v = StartupDisplay.class.getPackage().getImplementationVersion();
+        return v != null ? v : "unknown";
     }
 
     private static void printSystemInfo() {

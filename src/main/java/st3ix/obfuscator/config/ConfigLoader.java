@@ -20,22 +20,40 @@ public final class ConfigLoader {
      */
     @SuppressWarnings("unchecked")
     public static ObfuscatorConfig load() {
+        return loadWithPath().config();
+    }
+
+    /**
+     * Loads config and returns it with the source path (null if defaults).
+     */
+    @SuppressWarnings("unchecked")
+    public static LoadResult loadWithPath() {
         Path configPath = findConfigPath();
         if (configPath == null || !Files.isRegularFile(configPath)) {
-            return ObfuscatorConfig.defaults();
+            return new LoadResult(ObfuscatorConfig.defaults(), null);
         }
         try {
             Map<String, Object> raw = loadYaml(configPath);
-            if (raw == null) return ObfuscatorConfig.defaults();
+            if (raw == null) return new LoadResult(ObfuscatorConfig.defaults(), null);
 
             boolean classRenamingEnabled = getBoolean(raw, "classRenamingEnabled", true);
+            boolean numberObfuscationEnabled = getBoolean(raw, "numberObfuscationEnabled", true);
+            boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
+            int classNameLength = getInt(raw, "classNameLength", 6);
+            boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
 
-            return new ObfuscatorConfig(classRenamingEnabled, excludeClasses);
+            return new LoadResult(new ObfuscatorConfig(
+                classRenamingEnabled, numberObfuscationEnabled,
+                classNamesRandom, classNameLength, numberKeyRandom,
+                excludeClasses
+            ), configPath);
         } catch (Exception e) {
-            return ObfuscatorConfig.defaults();
+            return new LoadResult(ObfuscatorConfig.defaults(), null);
         }
     }
+
+    public record LoadResult(ObfuscatorConfig config, Path configPath) {}
 
     private static Path findConfigPath() {
         try {
@@ -65,6 +83,17 @@ public final class ConfigLoader {
         if (v == null) return def;
         if (v instanceof Boolean b) return b;
         if (v instanceof String s) return Boolean.parseBoolean(s);
+        return def;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static int getInt(Map<String, Object> map, String key, int def) {
+        Object v = map.get(key);
+        if (v == null) return def;
+        if (v instanceof Number n) return n.intValue();
+        if (v instanceof String s) {
+            try { return Integer.parseInt(s.trim()); } catch (NumberFormatException e) { return def; }
+        }
         return def;
     }
 

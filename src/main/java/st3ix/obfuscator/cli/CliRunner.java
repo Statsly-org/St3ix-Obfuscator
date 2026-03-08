@@ -2,6 +2,7 @@ package st3ix.obfuscator.cli;
 
 import st3ix.obfuscator.config.ConfigLoader;
 import st3ix.obfuscator.config.ObfuscatorConfig;
+import st3ix.obfuscator.log.Logger;
 import st3ix.obfuscator.core.ObfuscationPipeline;
 
 import java.nio.file.Path;
@@ -30,7 +31,13 @@ public final class CliRunner {
             System.exit(1);
         }
         try {
-            ObfuscatorConfig config = ConfigLoader.load();
+            var loadResult = ConfigLoader.loadWithPath();
+            ObfuscatorConfig config = loadResult.config();
+            if (loadResult.configPath() != null) {
+                Logger.info("Using config: %s", loadResult.configPath().toAbsolutePath());
+            } else {
+                Logger.info("Using default config (no config.yml found)");
+            }
             ObfuscationPipeline pipeline = new ObfuscationPipeline();
             pipeline.run(Path.of(parsed.inputPath), Path.of(parsed.outputPath), config);
             System.out.println("Done. Output: " + parsed.outputPath);
