@@ -1,0 +1,11 @@
+# St3ix Obfuscator config (rename to config.yml, place next to JAR)
+
+# Enable or disable class renaming
+classRenamingEnabled: true
+
+# Classes/packages to exclude from renaming.
+# Use dot or slash notation. Prefix matches (org.bukkit excludes org.bukkit.*)
+# Built-in excludes: java.*, javax.*, org.bukkit.*, net.minecraft.*, org.spigotmc.*, etc.
+excludeClasses:
+  - com.myapp.sensitive
+  - org.example.api
