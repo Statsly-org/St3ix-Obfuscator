@@ -6,6 +6,9 @@ classRenamingEnabled: true
 # Obfuscate numeric constants (int/long) using XOR
 numberObfuscationEnabled: true
 
+# Obfuscate array dimensions (new Type[n] -> n hidden with XOR)
+arrayObfuscationEnabled: true
+
 # Class name generation
 classNamesRandom: false   # true = random names per build, false = sequential (a, b, c...)
 classNameLength: 6       # minimum length of class names (1-32). Longer = harder to read.
