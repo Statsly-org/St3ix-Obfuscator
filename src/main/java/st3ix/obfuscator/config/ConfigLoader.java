@@ -56,6 +56,22 @@ public final class ConfigLoader {
 
     public record LoadResult(ObfuscatorConfig config, Path configPath) {}
 
+    /**
+     * Returns the directory containing the running JAR, or current directory as fallback.
+     */
+    public static Path getJarDirectory() {
+        try {
+            var uri = ConfigLoader.class.getProtectionDomain()
+                .getCodeSource().getLocation().toURI();
+            Path jarPath = Path.of(uri);
+            if (jarPath.toString().endsWith(".jar")) {
+                Path parent = jarPath.getParent();
+                if (parent != null) return parent;
+            }
+        } catch (Exception ignored) {}
+        return Path.of(".");
+    }
+
     private static Path findConfigPath() {
         try {
             var uri = ConfigLoader.class.getProtectionDomain()
