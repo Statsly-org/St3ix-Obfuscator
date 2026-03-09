@@ -81,7 +81,7 @@ The `Example/Java Project` folder contains a demo with an `obfuscate` Gradle tas
 
 ```bash
 cd "Example/Java Project"
-../gradlew obfuscate
+./gradlew obfuscate
 java -jar ../../build/dist/Obfuscate/example-java-project-obfuscated.jar
 ```
 
@@ -90,8 +90,6 @@ Or run `test-obfuscate.bat` from the project root for a full build and test.
 ## Documentation
 
 - [Features.md](Features.md) – Current and planned features
-- [docs/OBFUSCATION_REQUIREMENTS.md](docs/OBFUSCATION_REQUIREMENTS.md) – Obfuscation roadmap
-- [sidenotes.md](sidenotes.md) – Commands and quick reference
 - [CONTRIBUTING.md](CONTRIBUTING.md) – Contribution guidelines
 
 ## License

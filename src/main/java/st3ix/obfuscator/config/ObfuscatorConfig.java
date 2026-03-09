@@ -10,10 +10,12 @@ public record ObfuscatorConfig(
     boolean classRenamingEnabled,
     boolean numberObfuscationEnabled,
     boolean arrayObfuscationEnabled,
+    boolean booleanObfuscationEnabled,
     boolean classNamesRandom,
     int classNameLength,
     boolean numberKeyRandom,
     boolean arrayKeyRandom,
+    boolean booleanKeyRandom,
     List<String> excludeClasses
 ) {
     private static final int DEFAULT_CLASS_NAME_LENGTH = 6;
@@ -26,6 +28,6 @@ public record ObfuscatorConfig(
     }
 
     public static ObfuscatorConfig defaults() {
-        return new ObfuscatorConfig(true, true, true, false, DEFAULT_CLASS_NAME_LENGTH, false, false, List.of());
+        return new ObfuscatorConfig(true, true, true, true, false, DEFAULT_CLASS_NAME_LENGTH, false, false, false, List.of());
     }
 }

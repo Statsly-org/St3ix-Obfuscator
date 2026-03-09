@@ -7,6 +7,7 @@ import st3ix.obfuscator.io.JarProcessor.JarContents;
 import st3ix.obfuscator.io.JarProcessor.ResourceEntry;
 import st3ix.obfuscator.log.Logger;
 import st3ix.obfuscator.transform.ArrayObfuscator;
+import st3ix.obfuscator.transform.BooleanObfuscator;
 import st3ix.obfuscator.transform.ClassMapping;
 import st3ix.obfuscator.transform.ClassRenamer;
 import st3ix.obfuscator.transform.NumberObfuscator;
@@ -34,9 +35,11 @@ public final class ObfuscationPipeline {
         if (!config.classRenamingEnabled()) {
             Logger.info("Class renaming disabled by config.");
             List<ClassEntry> classesToWrite = contents.classes();
-            if (config.numberObfuscationEnabled() || config.arrayObfuscationEnabled()) {
+            boolean hasTransforms = config.numberObfuscationEnabled() || config.arrayObfuscationEnabled() || config.booleanObfuscationEnabled();
+            if (hasTransforms) {
                 int stepNum = 1;
-                int totalSteps = (config.numberObfuscationEnabled() ? 1 : 0) + (config.arrayObfuscationEnabled() ? 1 : 0) + 1;
+                int totalSteps = (config.numberObfuscationEnabled() ? 1 : 0) + (config.arrayObfuscationEnabled() ? 1 : 0)
+                    + (config.booleanObfuscationEnabled() ? 1 : 0) + 1;
                 if (config.numberObfuscationEnabled()) {
                     Logger.step("Step %d/%d: Number obfuscation", stepNum++, totalSteps);
                     NumberObfuscator no = config.numberKeyRandom() ? NumberObfuscator.withRandomKey() : new NumberObfuscator();
@@ -52,6 +55,14 @@ public final class ObfuscationPipeline {
                         .map(ce -> new ClassEntry(ce.path(), ce.internalName(), ao.transform(ce.bytes())))
                         .toList();
                     Logger.success("Array obfuscation applied");
+                }
+                if (config.booleanObfuscationEnabled()) {
+                    Logger.step("Step %d/%d: Boolean obfuscation", stepNum++, totalSteps);
+                    BooleanObfuscator bo = config.booleanKeyRandom() ? BooleanObfuscator.withRandomKey() : new BooleanObfuscator();
+                    classesToWrite = classesToWrite.stream()
+                        .map(ce -> new ClassEntry(ce.path(), ce.internalName(), bo.transform(ce.bytes())))
+                        .toList();
+                    Logger.success("Boolean obfuscation applied");
                 }
                 Logger.step("Step %d/%d: Writing output JAR: %s", stepNum, totalSteps, outputPath);
             } else {
@@ -81,7 +92,8 @@ public final class ObfuscationPipeline {
 
         boolean numberObfEnabled = config.numberObfuscationEnabled();
         boolean arrayObfEnabled = config.arrayObfuscationEnabled();
-        int totalSteps = 2 + (numberObfEnabled ? 1 : 0) + (arrayObfEnabled ? 1 : 0);
+        boolean booleanObfEnabled = config.booleanObfuscationEnabled();
+        int totalSteps = 2 + (numberObfEnabled ? 1 : 0) + (arrayObfEnabled ? 1 : 0) + (booleanObfEnabled ? 1 : 0);
         int stepNum = 1;
 
         Logger.step("Step %d/%d: Class renaming", stepNum++, totalSteps);
@@ -91,6 +103,9 @@ public final class ObfuscationPipeline {
             : null;
         ArrayObfuscator arrayObfuscator = arrayObfEnabled
             ? (config.arrayKeyRandom() ? ArrayObfuscator.withRandomKey() : new ArrayObfuscator())
+            : null;
+        BooleanObfuscator booleanObfuscator = booleanObfEnabled
+            ? (config.booleanKeyRandom() ? BooleanObfuscator.withRandomKey() : new BooleanObfuscator())
             : null;
         List<ClassEntry> transformed = new ArrayList<>();
         int renamedCount = 0;
@@ -108,6 +123,9 @@ public final class ObfuscationPipeline {
             if (arrayObfEnabled) {
                 bytes = arrayObfuscator.transform(bytes);
             }
+            if (booleanObfEnabled) {
+                bytes = booleanObfuscator.transform(bytes);
+            }
             String newPath = newInternal + ".class";
             transformed.add(new ClassEntry(newPath, newInternal, bytes));
         }
@@ -120,6 +138,10 @@ public final class ObfuscationPipeline {
         if (arrayObfEnabled) {
             Logger.step("Step %d/%d: Array obfuscation", stepNum++, totalSteps);
             Logger.success("Array obfuscation applied");
+        }
+        if (booleanObfEnabled) {
+            Logger.step("Step %d/%d: Boolean obfuscation", stepNum++, totalSteps);
+            Logger.success("Boolean obfuscation applied");
         }
 
         Logger.step("Step %d/%d: Writing output JAR: %s", stepNum, totalSteps, outputPath);

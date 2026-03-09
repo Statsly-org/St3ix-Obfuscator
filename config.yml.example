@@ -9,6 +9,9 @@ numberObfuscationEnabled: true
 # Obfuscate array dimensions (new Type[n] -> n hidden with XOR)
 arrayObfuscationEnabled: true
 
+# Obfuscate boolean constants (true/false -> value hidden with XOR)
+booleanObfuscationEnabled: true
+
 # Class name generation
 classNamesRandom: false   # true = random names per build, false = sequential (a, b, c...)
 classNameLength: 6       # minimum length of class names (1-32). Longer = harder to read.
@@ -16,6 +19,7 @@ classNameLength: 6       # minimum length of class names (1-32). Longer = harder
 # Obfuscation keys (XOR)
 numberKeyRandom: false   # true = random key per build, false = fixed key
 arrayKeyRandom: false    # true = random key per build, false = fixed key
+booleanKeyRandom: false  # true = random key per build, false = fixed key
 
 # Classes/packages to exclude from renaming.
 # Use dot or slash notation. Prefix matches (org.bukkit excludes org.bukkit.*)

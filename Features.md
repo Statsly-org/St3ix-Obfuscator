@@ -12,11 +12,12 @@
 ### Data Obfuscation
 - **Number obfuscation** – Hides `int` and `long` constants using XOR (`42` → `(42 ^ key) ^ key`)
 - **Array dimension obfuscation** – Hides array sizes (`new int[8]` → `new int[(8 ^ key) ^ key]`)
-- **Optional random keys** – `numberKeyRandom` and `arrayKeyRandom` for different XOR keys per build
+- **Boolean obfuscation** – Hides `true`/`false` literals using XOR (`ICONST_0`/`ICONST_1` → `(value ^ key) ^ key`)
+- **Optional random keys** – `numberKeyRandom`, `arrayKeyRandom`, `booleanKeyRandom` for different XOR keys per build
 
 ### Configuration
 - **YAML config** – `config.yml` next to JAR
-- **Per-feature toggles** – Enable/disable class renaming, number obfuscation, array obfuscation
+- **Per-feature toggles** – Enable/disable class renaming, number, array, and boolean obfuscation
 - **Random options** – Toggle randomness for class names and obfuscation keys
 
 ### Output & CLI
@@ -53,7 +54,7 @@
 - **Reflection hiding** – Obfuscate strings used in reflection
 
 ### Data Obfuscation
-- **Boolean obfuscation** – Replace `true`/`false` with opaque expressions
+- *(none remaining)*
 
 ### Structural Obfuscation
 - **Class splitting** – Split large classes into smaller ones
@@ -73,6 +74,3 @@
 - **Gradle/Maven plugins** – Easy integration into build pipelines
 - **Incremental obfuscation** – Support incremental builds where possible
 
----
-
-*See `docs/OBFUSCATION_REQUIREMENTS.md` for the full roadmap.*
