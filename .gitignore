@@ -19,6 +19,9 @@
 
 **/*.md
 *.md
+!Features.md
+!README.md
+!CONTRIBUTING.md
 
 # Gradle
 **/.gradle/
