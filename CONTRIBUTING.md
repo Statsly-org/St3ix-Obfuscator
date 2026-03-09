@@ -42,6 +42,23 @@ When a feature can use random values (keys, names, seeds, etc.), there **must** 
 
 ## Pull Request Process
 
+### Commit Message Format
+
+All commits and PR titles **must** follow [Conventional Commits](https://www.conventionalcommits.org/), e.g.:
+
+- `feat:` – new feature
+- `fix:` – bug fix
+- `docs:` – documentation
+- `refactor:` – code refactoring
+- `chore:` – maintenance, build, config
+- `test:` – tests
+
+Example: `feat: add array dimension obfuscation`
+
+PRs or commits without this format will be **rejected**.
+
+### Steps
+
 1. Branch from the main development branch
 2. Keep commits focused and logically grouped
 3. Ensure the project builds: `./gradlew dist`
