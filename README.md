@@ -1,4 +1,6 @@
-
+<p align="center">
+  <img src="./Images/logo.png" alt="St3ix Obfuscator" width="200"/>
+</p>
 
 # St3ix Obfuscator
 
