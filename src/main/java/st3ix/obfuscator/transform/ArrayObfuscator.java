@@ -13,6 +13,8 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
+import java.util.Random;
+
 /**
  * Obfuscates array creation by hiding the dimension (size) with XOR.
  * Transforms new Type[n] so that n is stored as (n ^ key) ^ key in bytecode.
@@ -20,7 +22,27 @@ import org.objectweb.asm.tree.TypeInsnNode;
  */
 public final class ArrayObfuscator {
 
-    private static final int INT_KEY = 0x7B3C9E1A;
+    private static final int DEFAULT_INT_KEY = 0x7B3C9E1A;
+
+    private final int intKey;
+
+    /**
+     * Creates an obfuscator with default (fixed) key.
+     */
+    public ArrayObfuscator() {
+        this.intKey = DEFAULT_INT_KEY;
+    }
+
+    /**
+     * Creates an obfuscator with random key (different per instance).
+     */
+    public static ArrayObfuscator withRandomKey() {
+        return new ArrayObfuscator(new Random().nextInt());
+    }
+
+    private ArrayObfuscator(int intKey) {
+        this.intKey = intKey;
+    }
 
     /**
      * Transforms the class bytes, obfuscating array dimensions.
@@ -93,10 +115,10 @@ public final class ArrayObfuscator {
     }
 
     private InsnList createXorSequence(int value) {
-        int obfuscated = value ^ INT_KEY;
+        int obfuscated = value ^ intKey;
         InsnList list = new InsnList();
         list.add(new LdcInsnNode(obfuscated));
-        list.add(new LdcInsnNode(INT_KEY));
+        list.add(new LdcInsnNode(intKey));
         list.add(new InsnNode(Opcodes.IXOR));
         return list;
     }

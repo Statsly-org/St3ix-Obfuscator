@@ -47,7 +47,7 @@ public final class ObfuscationPipeline {
                 }
                 if (config.arrayObfuscationEnabled()) {
                     Logger.step("Step %d/%d: Array obfuscation", stepNum++, totalSteps);
-                    ArrayObfuscator ao = new ArrayObfuscator();
+                    ArrayObfuscator ao = config.arrayKeyRandom() ? ArrayObfuscator.withRandomKey() : new ArrayObfuscator();
                     classesToWrite = classesToWrite.stream()
                         .map(ce -> new ClassEntry(ce.path(), ce.internalName(), ao.transform(ce.bytes())))
                         .toList();
@@ -89,7 +89,9 @@ public final class ObfuscationPipeline {
         NumberObfuscator numberObfuscator = numberObfEnabled
             ? (config.numberKeyRandom() ? NumberObfuscator.withRandomKey() : new NumberObfuscator())
             : null;
-        ArrayObfuscator arrayObfuscator = arrayObfEnabled ? new ArrayObfuscator() : null;
+        ArrayObfuscator arrayObfuscator = arrayObfEnabled
+            ? (config.arrayKeyRandom() ? ArrayObfuscator.withRandomKey() : new ArrayObfuscator())
+            : null;
         List<ClassEntry> transformed = new ArrayList<>();
         int renamedCount = 0;
         for (ClassEntry ce : contents.classes()) {

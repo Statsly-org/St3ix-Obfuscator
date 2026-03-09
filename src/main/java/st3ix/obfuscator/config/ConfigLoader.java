@@ -42,11 +42,12 @@ public final class ConfigLoader {
             boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
             int classNameLength = getInt(raw, "classNameLength", 6);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
+            boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
 
             return new LoadResult(new ObfuscatorConfig(
                 classRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
-                classNamesRandom, classNameLength, numberKeyRandom,
+                classNamesRandom, classNameLength, numberKeyRandom, arrayKeyRandom,
                 excludeClasses
             ), configPath);
         } catch (Exception e) {
