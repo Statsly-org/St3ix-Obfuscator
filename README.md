@@ -1,3 +1,5 @@
+
+
 # St3ix Obfuscator
 
 A Java bytecode obfuscator that transforms JAR files to make decompilation harder. Class names, numeric constants, and array dimensions are obfuscated while preserving runtime behavior.
@@ -35,12 +37,14 @@ See [Features.md](Features.md) for the full list of current and planned features
 
 ## Usage
 
-| Option | Description |
-|--------|-------------|
-| `-i`, `--input <path>` | Input JAR file |
+
+| Option                  | Description                                                        |
+| ----------------------- | ------------------------------------------------------------------ |
+| `-i`, `--input <path>`  | Input JAR file                                                     |
 | `-o`, `--output <path>` | Output filename (saved to `Obfuscate/` next to the obfuscator JAR) |
-| `--max-ram <size>` | Max heap hint (e.g. `512m`, `2g`) – use the launcher script |
-| `-h`, `--help` | Show usage |
+| `--max-ram <size>`      | Max heap hint (e.g. `512m`, `2g`) – use the launcher script        |
+| `-h`, `--help`          | Show usage                                                         |
+
 
 Output files are written to the `Obfuscate/` folder in the directory containing the obfuscator JAR. If a file with the same name exists, it is overwritten.
 
