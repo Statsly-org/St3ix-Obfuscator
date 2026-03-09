@@ -5,6 +5,7 @@ import st3ix.obfuscator.config.ObfuscatorConfig;
 import st3ix.obfuscator.log.Logger;
 import st3ix.obfuscator.core.ObfuscationPipeline;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +39,10 @@ public final class CliRunner {
             } else {
                 Logger.info("Using default config (no config.yml found)");
             }
+            Path outputPath = resolveOutputPath(parsed.outputPath);
             ObfuscationPipeline pipeline = new ObfuscationPipeline();
-            pipeline.run(Path.of(parsed.inputPath), Path.of(parsed.outputPath), config);
-            System.out.println("Done. Output: " + parsed.outputPath);
+            pipeline.run(Path.of(parsed.inputPath), outputPath, config);
+            System.out.println("Done. Output: " + outputPath.toAbsolutePath());
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             System.exit(1);
@@ -71,6 +73,20 @@ public final class CliRunner {
         return i + 1 < args.length ? args[i + 1] : null;
     }
 
+    private static final String OBFUSCATE_FOLDER = "Obfuscate";
+
+    private Path resolveOutputPath(String outputArg) throws java.io.IOException {
+        Path jarDir = ConfigLoader.getJarDirectory();
+        Path obfuscateDir = jarDir.resolve(OBFUSCATE_FOLDER);
+        Files.createDirectories(obfuscateDir);
+        String fileName = Path.of(outputArg).getFileName().toString();
+        Path outputPath = obfuscateDir.resolve(fileName);
+        if (Files.exists(outputPath)) {
+            Files.delete(outputPath);
+        }
+        return outputPath;
+    }
+
     private int parseRamMb(String val) {
         val = val.trim().toLowerCase();
         int mult = 1;
@@ -99,7 +115,7 @@ public final class CliRunner {
 
             Options:
               -i, --input <path>    Input JAR or directory
-              -o, --output <path>   Output JAR or directory
+              -o, --output <path>   Output filename (saved to Obfuscate/ in JAR directory)
               --max-ram <size>      Max heap hint (e.g. 512m, 2g). Pass -Xmx to JVM for actual limit.
               -h, --help            Show this message
 

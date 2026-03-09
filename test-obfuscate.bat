@@ -35,6 +35,11 @@ if errorlevel 1 goto :error
 echo --------------------------------------------
 echo.
 
+echo [5/5] Running obfuscated JAR...
+cd ..\..
+java -jar "build\dist\Obfuscate\example-java-project-obfuscated.jar"
+echo.
+
 echo ============================================
 echo  Done.
 echo ============================================
