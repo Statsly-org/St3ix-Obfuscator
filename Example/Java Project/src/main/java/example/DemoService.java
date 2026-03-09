@@ -15,6 +15,16 @@ public final class DemoService {
         processData(42, true);
         printMagicNumbers();
         printArrayDemo();
+        printBooleanDemo();
+    }
+
+    /** Boolean obfuscation target: true/false literals – obfuscated in bytecode */
+    private void printBooleanDemo() {
+        boolean a = true;
+        boolean b = false;
+        if (a && !b) {
+            System.out.println("Boolean obfuscation OK: " + a + ", " + b);
+        }
     }
 
     private String buildMessage(String a, String b) {

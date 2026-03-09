@@ -7,6 +7,15 @@ Thank you for your interest in contributing. Please follow these guidelines to k
 - Check [Features.md](Features.md) for planned work
 - Open an issue or discuss changes before large refactors
 
+## Issues & Pull Requests (Non-Maintainers)
+
+**Issues** and **pull requests** from non-maintainers must be **thoroughly described** and **correctly labeled**:
+
+- **Issues:** Include steps to reproduce, expected vs. actual behavior, environment (OS, Java version), and any relevant context. Use the appropriate labels (e.g. `bug`, `enhancement`, `question`).
+- **Pull requests:** Describe what changed, why, and how it was tested. Use the correct PR label (e.g. `feat`, `fix`, `docs`). Follow the commit message format below.
+
+Incomplete or unlabeled issues/PRs may be **closed** or **rejected**.
+
 ## Code Organization
 
 ### Structure
