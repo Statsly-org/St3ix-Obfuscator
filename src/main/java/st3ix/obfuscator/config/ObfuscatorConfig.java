@@ -9,6 +9,7 @@ import java.util.List;
 public record ObfuscatorConfig(
     boolean classRenamingEnabled,
     boolean numberObfuscationEnabled,
+    boolean arrayObfuscationEnabled,
     boolean classNamesRandom,
     int classNameLength,
     boolean numberKeyRandom,
@@ -24,6 +25,6 @@ public record ObfuscatorConfig(
     }
 
     public static ObfuscatorConfig defaults() {
-        return new ObfuscatorConfig(true, true, false, DEFAULT_CLASS_NAME_LENGTH, false, List.of());
+        return new ObfuscatorConfig(true, true, true, false, DEFAULT_CLASS_NAME_LENGTH, false, List.of());
     }
 }

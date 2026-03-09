@@ -38,13 +38,14 @@ public final class ConfigLoader {
 
             boolean classRenamingEnabled = getBoolean(raw, "classRenamingEnabled", true);
             boolean numberObfuscationEnabled = getBoolean(raw, "numberObfuscationEnabled", true);
+            boolean arrayObfuscationEnabled = getBoolean(raw, "arrayObfuscationEnabled", true);
             boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
             int classNameLength = getInt(raw, "classNameLength", 6);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
 
             return new LoadResult(new ObfuscatorConfig(
-                classRenamingEnabled, numberObfuscationEnabled,
+                classRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
                 classNamesRandom, classNameLength, numberKeyRandom,
                 excludeClasses
             ), configPath);

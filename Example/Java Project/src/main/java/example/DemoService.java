@@ -14,6 +14,7 @@ public final class DemoService {
         System.out.println(message);
         processData(42, true);
         printMagicNumbers();
+        printArrayDemo();
     }
 
     private String buildMessage(String a, String b) {
@@ -32,6 +33,17 @@ public final class DemoService {
         int seed = 12345;
         int threshold = 1000;
         System.out.println("Numbers (obfuscated in bytecode): port=" + port + ", seed=" + seed + ", threshold=" + threshold);
+    }
+
+    /** Array obfuscation target: new int[8], new String[3] - dimensions obfuscated in bytecode */
+    public void printArrayDemo() {
+        int[] sizes = new int[8];
+        String[] labels = new String[3];
+        for (int i = 0; i < sizes.length; i++) sizes[i] = i * 10;
+        labels[0] = "a";
+        labels[1] = "b";
+        labels[2] = "c";
+        System.out.println("Array (obfuscated dims): len=" + sizes.length + ", labels=" + labels.length);
     }
 
     public String getSecretKey() {
