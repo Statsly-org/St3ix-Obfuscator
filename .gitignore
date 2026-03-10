@@ -6,6 +6,7 @@
 **/dist/
 **/*.class
 **/*.jar
+!St3ix Obfuscator/st3ix-obfuscator.jar
 **/*.zip
 *.zip
 **/*.war
