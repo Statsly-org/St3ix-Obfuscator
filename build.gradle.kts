@@ -12,7 +12,7 @@ java {
 }
 
 application {
-    mainClass.set("st3ix.obfuscator.cli.CliRunner")
+    mainClass.set("st3ix.obfuscator.gui.Launcher")
 }
 
 repositories {
@@ -31,7 +31,7 @@ tasks.test {
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "st3ix.obfuscator.cli.CliRunner"
+        attributes["Main-Class"] = "st3ix.obfuscator.gui.Launcher"
         attributes["Implementation-Version"] = version
     }
 }
@@ -41,11 +41,12 @@ tasks.register<Jar>("fatJar") {
     archiveClassifier.set("all")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes["Main-Class"] = "st3ix.obfuscator.cli.CliRunner"
+        attributes["Main-Class"] = "st3ix.obfuscator.gui.Launcher"
         attributes["Implementation-Version"] = project.version
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     from(sourceSets.main.get().output)
+    from("Images") { into("Images") }
     dependsOn(tasks.classes)
 }
 
@@ -56,5 +57,44 @@ tasks.register<Copy>("dist") {
     }
     from("scripts")
     from("config.yml.example")
+    from("Images")
     into(layout.buildDirectory.dir("dist"))
+    finalizedBy("jpackage")
+}
+
+tasks.register<Exec>("jpackage") {
+    dependsOn("dist")
+    val distDir = layout.buildDirectory.dir("dist").get().asFile
+    val releaseDir = layout.projectDirectory.dir("release").asFile
+    val javaHome = File(System.getProperty("java.home"))
+    val jpackageExe = File(javaHome, "bin/jpackage" + if (System.getProperty("os.name").lowercase().contains("win")) ".exe" else "")
+    val shortTemp = File(System.getProperty("java.io.tmpdir")).resolve("st3ix-jpkg")
+    doFirst {
+        if (!jpackageExe.exists()) {
+            throw GradleException("jpackage not found at ${jpackageExe}. Use JDK 14+ (not JRE).")
+        }
+        val outputApp = releaseDir.resolve("St3ixObfuscator")
+        if (outputApp.exists()) outputApp.deleteRecursively()
+        distDir.resolve("St3ixObfuscator").takeIf { it.exists() }?.deleteRecursively()
+        shortTemp.mkdirs()
+        project.copy {
+            from(distDir.resolve("st3ix-obfuscator.jar"))
+            from(distDir.resolve("Images"))
+            from(distDir.resolve("config.yml.example"))
+            into(shortTemp)
+        }
+    }
+    commandLine(
+        jpackageExe.absolutePath,
+        "--input", shortTemp.absolutePath,
+        "--name", "St3ixObfuscator",
+        "--main-jar", "st3ix-obfuscator.jar",
+        "--main-class", "st3ix.obfuscator.gui.Launcher",
+        "--type", "app-image",
+        "--dest", releaseDir.absolutePath,
+        "--temp", shortTemp.resolve("work").absolutePath
+    )
+    doLast {
+        shortTemp.deleteRecursively()
+    }
 }

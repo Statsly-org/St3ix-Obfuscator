@@ -60,6 +60,39 @@ public final class ConfigLoader {
     public record LoadResult(ObfuscatorConfig config, Path configPath) {}
 
     /**
+     * Loads config from a specific path. Throws on I/O or parse errors.
+     */
+    @SuppressWarnings("unchecked")
+    public static LoadResult loadFrom(Path configPath) throws IOException {
+        if (configPath == null || !Files.isRegularFile(configPath)) {
+            throw new IOException("Config file not found: " + configPath);
+        }
+        Map<String, Object> raw = loadYaml(configPath);
+        if (raw == null) {
+            throw new IOException("Config file is empty or invalid YAML format.");
+        }
+        try {
+            boolean classRenamingEnabled = getBoolean(raw, "classRenamingEnabled", true);
+            boolean numberObfuscationEnabled = getBoolean(raw, "numberObfuscationEnabled", true);
+            boolean arrayObfuscationEnabled = getBoolean(raw, "arrayObfuscationEnabled", true);
+            boolean booleanObfuscationEnabled = getBoolean(raw, "booleanObfuscationEnabled", true);
+            boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
+            int classNameLength = getInt(raw, "classNameLength", 6);
+            boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
+            boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
+            boolean booleanKeyRandom = getBoolean(raw, "booleanKeyRandom", false);
+            List<String> excludeClasses = getStringList(raw, "excludeClasses");
+            return new LoadResult(new ObfuscatorConfig(
+                classRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
+                booleanObfuscationEnabled, classNamesRandom, classNameLength,
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, excludeClasses
+            ), configPath);
+        } catch (Exception e) {
+            throw new IOException("Config format invalid: " + e.getMessage());
+        }
+    }
+
+    /**
      * Returns the directory containing the running JAR, or current directory as fallback.
      */
     public static Path getJarDirectory() {

@@ -10,12 +10,17 @@
 **/*.ear
 **/*.exe
 **/*.dll
+release/**
+!release/St3ixObfuscator/
+!release/St3ixObfuscator/St3ixObfuscator.exe
 **/*.so
 **/*.dylib
 **/*.o
 **/*.obj
 **/*.a
 **/*.lib
+
+St3ix Obfuscator/**
 
 **/*.md
 *.md

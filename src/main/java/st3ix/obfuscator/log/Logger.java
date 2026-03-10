@@ -2,16 +2,25 @@ package st3ix.obfuscator.log;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.function.Consumer;
 
 /**
  * Colored console logger with timestamp and level.
+ * Supports optional GUI output redirection.
  */
 public final class Logger {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final boolean COLOR_ENABLED = System.getenv("NO_COLOR") == null;
 
+    private static volatile Consumer<String> guiOutput;
+
     private Logger() {}
+
+    /** Redirect log lines to GUI. Call with null to restore console only. */
+    public static void setGuiOutput(Consumer<String> consumer) {
+        guiOutput = consumer;
+    }
 
     public static void info(String message) {
         log("INFO", message, "\033[32m");
@@ -47,9 +56,12 @@ public final class Logger {
 
     private static void log(String level, String message, String color) {
         String time = LocalDateTime.now().format(TIME_FMT);
+        String plainLine = "[" + level + "] " + time + " " + message;
+        if (guiOutput != null) {
+            guiOutput.accept(plainLine);
+        }
         String reset = COLOR_ENABLED ? "\033[0m" : "";
         String c = COLOR_ENABLED ? color : "";
-        String line = "[" + level + "] " + time + " " + message;
-        System.out.println(c + line + reset);
+        System.out.println(c + plainLine + reset);
     }
 }
