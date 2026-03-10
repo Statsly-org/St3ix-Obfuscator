@@ -124,19 +124,23 @@ public final class ObfuscatorGui {
             JCheckBox numberObf = new JCheckBox("Number obfuscation", true);
             JCheckBox arrayObf = new JCheckBox("Array obfuscation", true);
             JCheckBox booleanObf = new JCheckBox("Boolean obfuscation", true);
+            JCheckBox stringObf = new JCheckBox("String obfuscation", true);
             JCheckBox classNamesRandom = new JCheckBox("Random class names", false);
             JCheckBox numberKeyRandom = new JCheckBox("Random number key", false);
             JCheckBox arrayKeyRandom = new JCheckBox("Random array key", false);
             JCheckBox booleanKeyRandom = new JCheckBox("Random boolean key", false);
+            JCheckBox stringKeyRandom = new JCheckBox("Random string key", false);
             JSpinner classNameLength = new JSpinner(new SpinnerNumberModel(6, 1, 32, 1));
             configPanel.add(classRename);
             configPanel.add(numberObf);
             configPanel.add(arrayObf);
             configPanel.add(booleanObf);
+            configPanel.add(stringObf);
             configPanel.add(classNamesRandom);
             configPanel.add(numberKeyRandom);
             configPanel.add(arrayKeyRandom);
             configPanel.add(booleanKeyRandom);
+            configPanel.add(stringKeyRandom);
             configPanel.add(new JLabel("Class name length:"));
             configPanel.add(classNameLength);
             center.add(configPanel, BorderLayout.NORTH);
@@ -166,8 +170,8 @@ public final class ObfuscatorGui {
                     ToastNotification.show(frame, "No config.yml found next to JAR. Using defaults.", ToastNotification.Type.INFO);
                     return;
                 }
-                applyConfig(classRename, numberObf, arrayObf, booleanObf, classNamesRandom,
-                    numberKeyRandom, arrayKeyRandom, booleanKeyRandom, classNameLength, excludeArea, result.config());
+                applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, classNamesRandom,
+                    numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
                 ToastNotification.show(frame, "Config loaded.", ToastNotification.Type.SUCCESS);
             });
             JButton browseConfigBtn = new JButton("Browse config...");
@@ -178,8 +182,8 @@ public final class ObfuscatorGui {
                 if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                     try {
                         var result = ConfigLoader.loadFrom(fc.getSelectedFile().toPath());
-                        applyConfig(classRename, numberObf, arrayObf, booleanObf, classNamesRandom,
-                            numberKeyRandom, arrayKeyRandom, booleanKeyRandom, classNameLength, excludeArea, result.config());
+                        applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, classNamesRandom,
+                            numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
                         ToastNotification.show(frame, "Config loaded from " + result.configPath().getFileName(), ToastNotification.Type.SUCCESS);
                     } catch (IOException ex) {
                         ToastNotification.show(frame, "Config invalid: " + ex.getMessage(), ToastNotification.Type.ERROR);
@@ -262,11 +266,13 @@ public final class ObfuscatorGui {
                     numberObf.isSelected(),
                     arrayObf.isSelected(),
                     booleanObf.isSelected(),
+                    stringObf.isSelected(),
                     classNamesRandom.isSelected(),
                     (Integer) classNameLength.getValue(),
                     numberKeyRandom.isSelected(),
                     arrayKeyRandom.isSelected(),
                     booleanKeyRandom.isSelected(),
+                    stringKeyRandom.isSelected(),
                     excludeList
                 );
 
@@ -319,16 +325,19 @@ public final class ObfuscatorGui {
     }
 
     private static void applyConfig(JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf,
-            JCheckBox classNamesRandom, JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom,
-            JSpinner classNameLength, JTextArea excludeArea, ObfuscatorConfig c) {
+            JCheckBox stringObf, JCheckBox classNamesRandom, JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom,
+            JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom, JSpinner classNameLength, JTextArea excludeArea,
+            ObfuscatorConfig c) {
         classRename.setSelected(c.classRenamingEnabled());
         numberObf.setSelected(c.numberObfuscationEnabled());
         arrayObf.setSelected(c.arrayObfuscationEnabled());
         booleanObf.setSelected(c.booleanObfuscationEnabled());
+        stringObf.setSelected(c.stringObfuscationEnabled());
         classNamesRandom.setSelected(c.classNamesRandom());
         numberKeyRandom.setSelected(c.numberKeyRandom());
         arrayKeyRandom.setSelected(c.arrayKeyRandom());
         booleanKeyRandom.setSelected(c.booleanKeyRandom());
+        stringKeyRandom.setSelected(c.stringKeyRandom());
         classNameLength.setValue(c.classNameLength());
         excludeArea.setText(String.join("\n", c.excludeClasses()));
     }

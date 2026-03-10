@@ -34,6 +34,7 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 - **Number obfuscation** – Hides `int`/`long` constants with XOR
 - **Array obfuscation** – Hides array dimensions
 - **Random options** – Optional random keys and class names per build
+- **String obfuscation** – Encrypts string literals (XOR), decrypts at runtime
 - **Exclude patterns** – Skip JDK, Bukkit, Minecraft, and custom packages
 - **YAML config** – `config.yml` next to the JAR
 
