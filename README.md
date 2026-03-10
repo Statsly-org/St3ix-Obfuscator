@@ -14,8 +14,8 @@ A Java bytecode obfuscator that transforms JAR files to make decompilation harde
 ## Quick Start
 
 ```bash
-# Build the obfuscator
-./gradlew dist
+# Build the obfuscator (JAR + scripts)
+./gradlew dist    # → build/dist/
 
 # Obfuscate a JAR (output goes to build/dist/Obfuscate/)
 java -jar build/dist/st3ix-obfuscator.jar -i myapp.jar -o myapp-obfuscated.jar
@@ -24,7 +24,9 @@ java -jar build/dist/st3ix-obfuscator.jar -i myapp.jar -o myapp-obfuscated.jar
 java -jar build/dist/Obfuscate/myapp-obfuscated.jar
 ```
 
-**Windows:** Use `gradlew.bat` and `build\dist\st3ix.bat` for the launcher script.
+**Windows:** Use `gradlew.bat` for building. For the GUI, run `run-gui.bat` from `build/dist/` or double-click the JAR.
+
+Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zum Starten, Config-Beispiel, Images.
 
 ## Features
 

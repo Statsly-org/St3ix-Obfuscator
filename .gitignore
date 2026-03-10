@@ -6,6 +6,8 @@
 **/dist/
 **/*.class
 **/*.jar
+**/*.zip
+*.zip
 **/*.war
 **/*.ear
 **/*.exe

@@ -12,7 +12,7 @@ java {
 }
 
 application {
-    mainClass.set("st3ix.obfuscator.cli.CliRunner")
+    mainClass.set("st3ix.obfuscator.gui.Launcher")
 }
 
 repositories {
@@ -31,7 +31,7 @@ tasks.test {
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = "st3ix.obfuscator.cli.CliRunner"
+        attributes["Main-Class"] = "st3ix.obfuscator.gui.Launcher"
         attributes["Implementation-Version"] = version
     }
 }
@@ -41,11 +41,12 @@ tasks.register<Jar>("fatJar") {
     archiveClassifier.set("all")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes["Main-Class"] = "st3ix.obfuscator.cli.CliRunner"
+        attributes["Main-Class"] = "st3ix.obfuscator.gui.Launcher"
         attributes["Implementation-Version"] = project.version
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     from(sourceSets.main.get().output)
+    from("Images") { into("Images") }
     dependsOn(tasks.classes)
 }
 
@@ -56,5 +57,6 @@ tasks.register<Copy>("dist") {
     }
     from("scripts")
     from("config.yml.example")
+    from("Images")
     into(layout.buildDirectory.dir("dist"))
 }
