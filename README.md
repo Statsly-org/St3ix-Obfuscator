@@ -4,7 +4,7 @@
 
 # St3ix Obfuscator
 
-A Java bytecode obfuscator that transforms JAR files to make decompilation harder. Class names, numeric constants, and array dimensions are obfuscated while preserving runtime behavior.
+A Java bytecode obfuscator that transforms JAR files to make decompilation harder. Class names (including homoglyphs and invisible chars), numeric constants, booleans, strings, and array dimensions are obfuscated while preserving runtime behavior.
 
 ## Requirements
 
@@ -31,10 +31,13 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 ## Features
 
 - **Class renaming** – Short or random names; configurable length
-- **Number obfuscation** – Hides `int`/`long` constants with XOR
+- **Homoglyph & invisible chars** – Unicode lookalikes (a→а) and zero-width chars; copy-paste fails
+- **Number obfuscation** – Hides `int`, `long`, `float`, `double` with XOR
 - **Array obfuscation** – Hides array dimensions
-- **Random options** – Optional random keys and class names per build
+- **Boolean obfuscation** – Hides `true`/`false` literals
 - **String obfuscation** – Encrypts string literals (XOR), decrypts at runtime
+- **Debug info stripping** – Removes source names, line numbers, local variable names
+- **Random options** – Optional random keys and class names per build
 - **Exclude patterns** – Skip JDK, Bukkit, Minecraft, and custom packages
 - **YAML config** – `config.yml` next to the JAR
 
@@ -61,10 +64,17 @@ Copy `config.yml.example` to `config.yml` and place it next to `st3ix-obfuscator
 classRenamingEnabled: true
 numberObfuscationEnabled: true
 arrayObfuscationEnabled: true
+booleanObfuscationEnabled: true
+stringObfuscationEnabled: true
+debugInfoStrippingEnabled: true
 classNamesRandom: false
 classNameLength: 6
+classNamesHomoglyph: false      # Cyrillic lookalikes (a→а)
+classNamesInvisibleChars: false # Zero-width chars in names
 numberKeyRandom: false
 arrayKeyRandom: false
+booleanKeyRandom: false
+stringKeyRandom: false
 excludeClasses:
   - com.myapp.sensitive
 ```
@@ -96,9 +106,78 @@ java -jar ../../build/dist/Obfuscate/example-java-project-obfuscated.jar
 
 Or run `test-obfuscate.bat` from the project root for a full build and test.
 
+## Before & After Example
+
+**Before obfuscation** (decompiled):
+
+```java
+// example/Main.java
+package example;
+
+public final class Main {
+    public static void main(String[] args) {
+        System.out.println("Example project running.");
+        DemoService service = new DemoService();
+        service.run();
+    }
+}
+
+// example/DemoService.java
+public final class DemoService {
+    private static final String SECRET_KEY = "my-secret-key-12345";
+    private int counter;
+    
+    public void run() {
+        counter++;
+        int port = 25565;
+        int seed = 12345;
+        boolean flag = true;
+        System.out.println("port=" + port + ", seed=" + seed);
+    }
+}
+```
+
+**After obfuscation** (with class renaming, homoglyph, debug stripping, number/string obfuscation):
+
+```java
+// а/b.java  (Cyrillic а + invisible char – looks like "a" but isn't)
+public final class b {
+    public static void main(String[] args) {
+        System.out.println(o.a.d(new byte[]{...}, 12345));
+        ь var0 = new ь();
+        var0.run();
+    }
+}
+
+// а/ь.java  (Cyrillic ь)
+public final class ь {
+    private static final String a = o.a.d(new byte[]{...}, 98765);
+    private int b;
+    
+    public void run() {
+        this.b++;
+        int var0 = 25565 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;
+        int var1 = 12345 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;
+        boolean var2 = (1 ^ 0x5A5A5A5A) ^ 0x5A5A5A5A;
+        System.out.println("port=" + var0 + ", seed=" + var1);
+    }
+}
+```
+
+| Transform        | Effect                                                                 |
+|------------------|-----------------------------------------------------------------------|
+| Class renaming   | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`)  |
+| Homoglyph        | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
+| Invisible chars  | Zero-width chars in names – appear normal but differ                 |
+| Number obfuscation | `25565` → `(x ^ key) ^ key`; floats/doubles via bit XOR             |
+| Boolean obfuscation | `true` → `(value ^ key) ^ key`                                    |
+| String obfuscation | `"my-secret-key"` → encrypted bytes, decoded at runtime           |
+| Debug stripping  | Local vars become `var0`, `var1`; line numbers removed               |
+
 ## Documentation
 
 - [Features.md](Features.md) – Current and planned features
+- [docs/HOMOGLYPH_INFO.md](docs/HOMOGLYPH_INFO.md) – Homoglyph & invisible char obfuscation
 - [CONTRIBUTING.md](CONTRIBUTING.md) – Contribution guidelines
 
 ## License
