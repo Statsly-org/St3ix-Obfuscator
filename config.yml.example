@@ -21,6 +21,8 @@ debugInfoStrippingEnabled: true
 # Class name generation
 classNamesRandom: false   # true = random names per build, false = sequential (a, b, c...)
 classNameLength: 6       # minimum length of class names (1-32). Longer = harder to read.
+classNamesHomoglyph: false   # use lookalike chars (Cyrillic а vs Latin a); copy-paste fails
+classNamesInvisibleChars: false  # inject zero-width chars; names appear normal but differ
 
 # Obfuscation keys (XOR)
 numberKeyRandom: false   # true = random key per build, false = fixed key

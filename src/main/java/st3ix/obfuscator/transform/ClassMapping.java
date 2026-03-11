@@ -37,7 +37,14 @@ public final class ClassMapping {
      * @param nameLength minimum length of generated names (1–32)
      */
     public ClassMapping(boolean namesRandom, int nameLength) {
-        this.nameGen = new NameGenerator(namesRandom, nameLength);
+        this(namesRandom, nameLength, false, false);
+    }
+
+    /**
+     * Creates a mapping with optional homoglyph and invisible-char obfuscation.
+     */
+    public ClassMapping(boolean namesRandom, int nameLength, boolean useHomoglyph, boolean useInvisibleChars) {
+        this.nameGen = new NameGenerator(namesRandom, nameLength, useHomoglyph, useInvisibleChars);
         for (String p : LIBRARY_PREFIXES) {
             excludePrefixes.add(p);
         }

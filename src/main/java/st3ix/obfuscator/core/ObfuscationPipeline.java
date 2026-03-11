@@ -108,7 +108,8 @@ public final class ObfuscationPipeline {
             .toList();
 
         Logger.info("Building class mapping (%d classes)", classNames.size());
-        ClassMapping mapping = new ClassMapping(config.classNamesRandom(), config.classNameLength());
+        ClassMapping mapping = new ClassMapping(config.classNamesRandom(), config.classNameLength(),
+            config.classNamesHomoglyph(), config.classNamesInvisibleChars());
         mapping.addExcludes(config.excludeClasses());
         for (String name : classNames) {
             mapping.map(name);

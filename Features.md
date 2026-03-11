@@ -8,6 +8,8 @@
 - **Random vs sequential** – Optional random names per build for stronger obfuscation
 - **Exclude patterns** – Skip classes/packages from renaming (config + built-in for JDK, Bukkit, Minecraft, etc.)
 - **Package flattening** – Inner classes get short names; outer package hierarchy preserved
+- **Homoglyph obfuscation** – Use Unicode lookalikes (e.g. Cyrillic а instead of Latin a). Names appear familiar but copy-paste and search fail. Sequential: fixed mapping; random: varies per char.
+- **Invisible character injection** – Zero-width chars (U+200B, etc.) in names. Safe for JVM; harder to detect and remove.
 
 ### Data Obfuscation
 - **Number obfuscation** – Hides `int`, `long`, `float` and `double` constants using XOR (`42` → `(42 ^ key) ^ key`; floats/doubles via bit representation)

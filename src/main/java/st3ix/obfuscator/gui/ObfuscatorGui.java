@@ -127,6 +127,8 @@ public final class ObfuscatorGui {
             JCheckBox stringObf = new JCheckBox("String obfuscation", true);
             JCheckBox debugInfoStrip = new JCheckBox("Strip debug info", true);
             JCheckBox classNamesRandom = new JCheckBox("Random class names", false);
+            JCheckBox classNamesHomoglyph = new JCheckBox("Homoglyph class names", false);
+            JCheckBox classNamesInvisibleChars = new JCheckBox("Invisible chars in names", false);
             JCheckBox numberKeyRandom = new JCheckBox("Random number key", false);
             JCheckBox arrayKeyRandom = new JCheckBox("Random array key", false);
             JCheckBox booleanKeyRandom = new JCheckBox("Random boolean key", false);
@@ -139,6 +141,8 @@ public final class ObfuscatorGui {
             configPanel.add(stringObf);
             configPanel.add(debugInfoStrip);
             configPanel.add(classNamesRandom);
+            configPanel.add(classNamesHomoglyph);
+            configPanel.add(classNamesInvisibleChars);
             configPanel.add(numberKeyRandom);
             configPanel.add(arrayKeyRandom);
             configPanel.add(booleanKeyRandom);
@@ -147,6 +151,16 @@ public final class ObfuscatorGui {
             configPanel.add(classNameLength);
             center.add(configPanel, BorderLayout.NORTH);
 
+            JPanel advancedObfPanel = new JPanel(new BorderLayout(4, 4));
+            advancedObfPanel.setBackground(BG_PANEL);
+            advancedObfPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Advanced class name obfuscation"));
+            String homoglyphInfo = "<html><b>Homoglyphs & invisible characters</b> – Use Unicode lookalikes (e.g. Cyrillic а instead of Latin a) and zero-width chars. "
+                + "Names appear normal but copy-paste and search fail. Safe for JVM; increases reverse-engineering effort.</html>";
+            JLabel homoglyphInfoLabel = new JLabel(homoglyphInfo);
+            homoglyphInfoLabel.setFont(homoglyphInfoLabel.getFont().deriveFont(10f));
+            homoglyphInfoLabel.setForeground(new Color(0x555555));
+            homoglyphInfoLabel.setBorder(new EmptyBorder(4, 6, 8, 6));
+            advancedObfPanel.add(homoglyphInfoLabel, BorderLayout.NORTH);
             JPanel excludePanel = new JPanel(new BorderLayout(4, 4));
             excludePanel.setBackground(BG_PANEL);
             excludePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Exclude classes (one per line)"));
@@ -160,7 +174,13 @@ public final class ObfuscatorGui {
             excludeInfo.setForeground(new Color(0x666666));
             excludePanel.add(excludeScroll, BorderLayout.CENTER);
             excludePanel.add(excludeInfo, BorderLayout.SOUTH);
-            center.add(excludePanel, BorderLayout.CENTER);
+
+            JPanel centerContent = new JPanel();
+            centerContent.setLayout(new BoxLayout(centerContent, BoxLayout.Y_AXIS));
+            centerContent.setBackground(BG_MAIN);
+            centerContent.add(advancedObfPanel);
+            centerContent.add(excludePanel);
+            center.add(centerContent, BorderLayout.CENTER);
 
             JPanel configRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
             configRow.setBackground(BG_MAIN);
@@ -173,7 +193,8 @@ public final class ObfuscatorGui {
                     return;
                 }
                 applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
-                    numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
+                    classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
+                    stringKeyRandom, classNameLength, excludeArea, result.config());
                 ToastNotification.show(frame, "Config loaded.", ToastNotification.Type.SUCCESS);
             });
             JButton browseConfigBtn = new JButton("Browse config...");
@@ -185,7 +206,8 @@ public final class ObfuscatorGui {
                     try {
                         var result = ConfigLoader.loadFrom(fc.getSelectedFile().toPath());
                         applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
-                            numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
+                            classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
+                            stringKeyRandom, classNameLength, excludeArea, result.config());
                         ToastNotification.show(frame, "Config loaded from " + result.configPath().getFileName(), ToastNotification.Type.SUCCESS);
                     } catch (IOException ex) {
                         ToastNotification.show(frame, "Config invalid: " + ex.getMessage(), ToastNotification.Type.ERROR);
@@ -272,6 +294,8 @@ public final class ObfuscatorGui {
                     debugInfoStrip.isSelected(),
                     classNamesRandom.isSelected(),
                     (Integer) classNameLength.getValue(),
+                    classNamesHomoglyph.isSelected(),
+                    classNamesInvisibleChars.isSelected(),
                     numberKeyRandom.isSelected(),
                     arrayKeyRandom.isSelected(),
                     booleanKeyRandom.isSelected(),
@@ -328,9 +352,10 @@ public final class ObfuscatorGui {
     }
 
     private static void applyConfig(JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf,
-            JCheckBox stringObf, JCheckBox debugInfoStrip, JCheckBox classNamesRandom, JCheckBox numberKeyRandom,
-            JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom, JSpinner classNameLength,
-            JTextArea excludeArea, ObfuscatorConfig c) {
+            JCheckBox stringObf, JCheckBox debugInfoStrip, JCheckBox classNamesRandom, JCheckBox classNamesHomoglyph,
+            JCheckBox classNamesInvisibleChars, JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom,
+            JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom, JSpinner classNameLength, JTextArea excludeArea,
+            ObfuscatorConfig c) {
         classRename.setSelected(c.classRenamingEnabled());
         numberObf.setSelected(c.numberObfuscationEnabled());
         arrayObf.setSelected(c.arrayObfuscationEnabled());
@@ -338,6 +363,8 @@ public final class ObfuscatorGui {
         stringObf.setSelected(c.stringObfuscationEnabled());
         debugInfoStrip.setSelected(c.debugInfoStrippingEnabled());
         classNamesRandom.setSelected(c.classNamesRandom());
+        classNamesHomoglyph.setSelected(c.classNamesHomoglyph());
+        classNamesInvisibleChars.setSelected(c.classNamesInvisibleChars());
         numberKeyRandom.setSelected(c.numberKeyRandom());
         arrayKeyRandom.setSelected(c.arrayKeyRandom());
         booleanKeyRandom.setSelected(c.booleanKeyRandom());
