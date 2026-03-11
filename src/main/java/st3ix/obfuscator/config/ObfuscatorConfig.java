@@ -15,6 +15,8 @@ public record ObfuscatorConfig(
     boolean debugInfoStrippingEnabled,
     boolean classNamesRandom,
     int classNameLength,
+    boolean classNamesHomoglyph,
+    boolean classNamesInvisibleChars,
     boolean numberKeyRandom,
     boolean arrayKeyRandom,
     boolean booleanKeyRandom,
@@ -32,6 +34,6 @@ public record ObfuscatorConfig(
 
     public static ObfuscatorConfig defaults() {
         return new ObfuscatorConfig(true, true, true, true, true, true, false, DEFAULT_CLASS_NAME_LENGTH,
-            false, false, false, false, List.of());
+            false, false, false, false, false, false, List.of());
     }
 }

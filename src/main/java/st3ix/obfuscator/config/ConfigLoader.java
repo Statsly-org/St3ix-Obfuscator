@@ -44,6 +44,8 @@ public final class ConfigLoader {
             boolean debugInfoStrippingEnabled = getBoolean(raw, "debugInfoStrippingEnabled", true);
             boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
             int classNameLength = getInt(raw, "classNameLength", 6);
+            boolean classNamesHomoglyph = getBoolean(raw, "classNamesHomoglyph", false);
+            boolean classNamesInvisibleChars = getBoolean(raw, "classNamesInvisibleChars", false);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
             boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
             boolean booleanKeyRandom = getBoolean(raw, "booleanKeyRandom", false);
@@ -53,8 +55,8 @@ public final class ConfigLoader {
             return new LoadResult(new ObfuscatorConfig(
                 classRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
                 booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
-                classNamesRandom, classNameLength, numberKeyRandom, arrayKeyRandom,
-                booleanKeyRandom, stringKeyRandom, excludeClasses
+                classNamesRandom, classNameLength, classNamesHomoglyph, classNamesInvisibleChars,
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {
             return new LoadResult(ObfuscatorConfig.defaults(), null);
@@ -84,6 +86,8 @@ public final class ConfigLoader {
             boolean debugInfoStrippingEnabled = getBoolean(raw, "debugInfoStrippingEnabled", true);
             boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
             int classNameLength = getInt(raw, "classNameLength", 6);
+            boolean classNamesHomoglyph = getBoolean(raw, "classNamesHomoglyph", false);
+            boolean classNamesInvisibleChars = getBoolean(raw, "classNamesInvisibleChars", false);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
             boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
             boolean booleanKeyRandom = getBoolean(raw, "booleanKeyRandom", false);
@@ -92,8 +96,8 @@ public final class ConfigLoader {
             return new LoadResult(new ObfuscatorConfig(
                 classRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
                 booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
-                classNamesRandom, classNameLength, numberKeyRandom, arrayKeyRandom,
-                booleanKeyRandom, stringKeyRandom, excludeClasses
+                classNamesRandom, classNameLength, classNamesHomoglyph, classNamesInvisibleChars,
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {
             throw new IOException("Config format invalid: " + e.getMessage());
