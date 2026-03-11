@@ -10,6 +10,7 @@ import st3ix.obfuscator.transform.ArrayObfuscator;
 import st3ix.obfuscator.transform.BooleanObfuscator;
 import st3ix.obfuscator.transform.ClassMapping;
 import st3ix.obfuscator.transform.ClassRenamer;
+import st3ix.obfuscator.transform.DebugInfoStripper;
 import st3ix.obfuscator.transform.NumberObfuscator;
 import st3ix.obfuscator.transform.StringObfuscator;
 
@@ -37,11 +38,13 @@ public final class ObfuscationPipeline {
             Logger.info("Class renaming disabled by config.");
             List<ClassEntry> classesToWrite = contents.classes();
             boolean hasTransforms = config.numberObfuscationEnabled() || config.arrayObfuscationEnabled()
-                || config.booleanObfuscationEnabled() || config.stringObfuscationEnabled();
+                || config.booleanObfuscationEnabled() || config.stringObfuscationEnabled()
+                || config.debugInfoStrippingEnabled();
             if (hasTransforms) {
                 int stepNum = 1;
                 int totalSteps = (config.numberObfuscationEnabled() ? 1 : 0) + (config.arrayObfuscationEnabled() ? 1 : 0)
-                    + (config.booleanObfuscationEnabled() ? 1 : 0) + (config.stringObfuscationEnabled() ? 1 : 0) + 1;
+                    + (config.booleanObfuscationEnabled() ? 1 : 0) + (config.stringObfuscationEnabled() ? 1 : 0)
+                    + (config.debugInfoStrippingEnabled() ? 1 : 0) + 1;
                 if (config.numberObfuscationEnabled()) {
                     Logger.step("Step %d/%d: Number obfuscation", stepNum++, totalSteps);
                     NumberObfuscator no = config.numberKeyRandom() ? NumberObfuscator.withRandomKey() : new NumberObfuscator();
@@ -77,6 +80,14 @@ public final class ObfuscationPipeline {
                     classesToWrite.add(new ClassEntry(StringObfuscator.DECODER_CLASS + ".class", StringObfuscator.DECODER_CLASS, decoderBytes));
                     Logger.success("String obfuscation applied");
                 }
+                if (config.debugInfoStrippingEnabled()) {
+                    Logger.step("Step %d/%d: Debug info stripping", stepNum++, totalSteps);
+                    DebugInfoStripper dis = new DebugInfoStripper();
+                    classesToWrite = classesToWrite.stream()
+                        .map(ce -> new ClassEntry(ce.path(), ce.internalName(), dis.transform(ce.bytes())))
+                        .toList();
+                    Logger.success("Debug info stripping applied");
+                }
                 Logger.step("Step %d/%d: Writing output JAR: %s", stepNum, totalSteps, outputPath);
             } else {
                 Logger.info("Copying JAR without transformations.");
@@ -107,7 +118,9 @@ public final class ObfuscationPipeline {
         boolean arrayObfEnabled = config.arrayObfuscationEnabled();
         boolean booleanObfEnabled = config.booleanObfuscationEnabled();
         boolean stringObfEnabled = config.stringObfuscationEnabled();
-        int totalSteps = 2 + (numberObfEnabled ? 1 : 0) + (arrayObfEnabled ? 1 : 0) + (booleanObfEnabled ? 1 : 0) + (stringObfEnabled ? 1 : 0);
+        boolean debugInfoStrippingEnabled = config.debugInfoStrippingEnabled();
+        int totalSteps = 2 + (numberObfEnabled ? 1 : 0) + (arrayObfEnabled ? 1 : 0) + (booleanObfEnabled ? 1 : 0)
+            + (stringObfEnabled ? 1 : 0) + (debugInfoStrippingEnabled ? 1 : 0);
         int stepNum = 1;
 
         Logger.step("Step %d/%d: Class renaming", stepNum++, totalSteps);
@@ -146,6 +159,9 @@ public final class ObfuscationPipeline {
             if (stringObfEnabled) {
                 bytes = stringObfuscator.transform(bytes);
             }
+            if (debugInfoStrippingEnabled) {
+                bytes = new DebugInfoStripper().transform(bytes);
+            }
             String newPath = newInternal + ".class";
             transformed.add(new ClassEntry(newPath, newInternal, bytes));
         }
@@ -170,6 +186,10 @@ public final class ObfuscationPipeline {
         if (stringObfEnabled) {
             Logger.step("Step %d/%d: String obfuscation", stepNum++, totalSteps);
             Logger.success("String obfuscation applied");
+        }
+        if (debugInfoStrippingEnabled) {
+            Logger.step("Step %d/%d: Debug info stripping", stepNum++, totalSteps);
+            Logger.success("Debug info stripping applied");
         }
 
         Logger.step("Step %d/%d: Writing output JAR: %s", stepNum, totalSteps, outputPath);

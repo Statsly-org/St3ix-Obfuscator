@@ -9,6 +9,7 @@ public final class Main {
         System.out.println("Example project running.");
         DemoService service = new DemoService();
         service.run();
+        new DebugStrippingDemo().demonstrateLocalVariables();
         CrossRefTest crossRef = new CrossRefTest();
         crossRef.run();
     }

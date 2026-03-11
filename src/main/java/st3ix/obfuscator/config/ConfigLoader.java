@@ -41,6 +41,7 @@ public final class ConfigLoader {
             boolean arrayObfuscationEnabled = getBoolean(raw, "arrayObfuscationEnabled", true);
             boolean booleanObfuscationEnabled = getBoolean(raw, "booleanObfuscationEnabled", true);
             boolean stringObfuscationEnabled = getBoolean(raw, "stringObfuscationEnabled", true);
+            boolean debugInfoStrippingEnabled = getBoolean(raw, "debugInfoStrippingEnabled", true);
             boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
             int classNameLength = getInt(raw, "classNameLength", 6);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
@@ -51,8 +52,9 @@ public final class ConfigLoader {
 
             return new LoadResult(new ObfuscatorConfig(
                 classRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
-                booleanObfuscationEnabled, stringObfuscationEnabled, classNamesRandom, classNameLength,
-                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
+                booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
+                classNamesRandom, classNameLength, numberKeyRandom, arrayKeyRandom,
+                booleanKeyRandom, stringKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {
             return new LoadResult(ObfuscatorConfig.defaults(), null);
@@ -79,6 +81,7 @@ public final class ConfigLoader {
             boolean arrayObfuscationEnabled = getBoolean(raw, "arrayObfuscationEnabled", true);
             boolean booleanObfuscationEnabled = getBoolean(raw, "booleanObfuscationEnabled", true);
             boolean stringObfuscationEnabled = getBoolean(raw, "stringObfuscationEnabled", true);
+            boolean debugInfoStrippingEnabled = getBoolean(raw, "debugInfoStrippingEnabled", true);
             boolean classNamesRandom = getBoolean(raw, "classNamesRandom", false);
             int classNameLength = getInt(raw, "classNameLength", 6);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
@@ -88,8 +91,9 @@ public final class ConfigLoader {
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
             return new LoadResult(new ObfuscatorConfig(
                 classRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
-                booleanObfuscationEnabled, stringObfuscationEnabled, classNamesRandom, classNameLength,
-                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
+                booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
+                classNamesRandom, classNameLength, numberKeyRandom, arrayKeyRandom,
+                booleanKeyRandom, stringKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {
             throw new IOException("Config format invalid: " + e.getMessage());
