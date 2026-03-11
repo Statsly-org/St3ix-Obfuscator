@@ -125,6 +125,7 @@ public final class ObfuscatorGui {
             JCheckBox arrayObf = new JCheckBox("Array obfuscation", true);
             JCheckBox booleanObf = new JCheckBox("Boolean obfuscation", true);
             JCheckBox stringObf = new JCheckBox("String obfuscation", true);
+            JCheckBox debugInfoStrip = new JCheckBox("Strip debug info", true);
             JCheckBox classNamesRandom = new JCheckBox("Random class names", false);
             JCheckBox numberKeyRandom = new JCheckBox("Random number key", false);
             JCheckBox arrayKeyRandom = new JCheckBox("Random array key", false);
@@ -136,6 +137,7 @@ public final class ObfuscatorGui {
             configPanel.add(arrayObf);
             configPanel.add(booleanObf);
             configPanel.add(stringObf);
+            configPanel.add(debugInfoStrip);
             configPanel.add(classNamesRandom);
             configPanel.add(numberKeyRandom);
             configPanel.add(arrayKeyRandom);
@@ -170,7 +172,7 @@ public final class ObfuscatorGui {
                     ToastNotification.show(frame, "No config.yml found next to JAR. Using defaults.", ToastNotification.Type.INFO);
                     return;
                 }
-                applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, classNamesRandom,
+                applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
                     numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
                 ToastNotification.show(frame, "Config loaded.", ToastNotification.Type.SUCCESS);
             });
@@ -182,7 +184,7 @@ public final class ObfuscatorGui {
                 if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                     try {
                         var result = ConfigLoader.loadFrom(fc.getSelectedFile().toPath());
-                        applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, classNamesRandom,
+                        applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
                             numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
                         ToastNotification.show(frame, "Config loaded from " + result.configPath().getFileName(), ToastNotification.Type.SUCCESS);
                     } catch (IOException ex) {
@@ -267,6 +269,7 @@ public final class ObfuscatorGui {
                     arrayObf.isSelected(),
                     booleanObf.isSelected(),
                     stringObf.isSelected(),
+                    debugInfoStrip.isSelected(),
                     classNamesRandom.isSelected(),
                     (Integer) classNameLength.getValue(),
                     numberKeyRandom.isSelected(),
@@ -325,14 +328,15 @@ public final class ObfuscatorGui {
     }
 
     private static void applyConfig(JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf,
-            JCheckBox stringObf, JCheckBox classNamesRandom, JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom,
-            JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom, JSpinner classNameLength, JTextArea excludeArea,
-            ObfuscatorConfig c) {
+            JCheckBox stringObf, JCheckBox debugInfoStrip, JCheckBox classNamesRandom, JCheckBox numberKeyRandom,
+            JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom, JSpinner classNameLength,
+            JTextArea excludeArea, ObfuscatorConfig c) {
         classRename.setSelected(c.classRenamingEnabled());
         numberObf.setSelected(c.numberObfuscationEnabled());
         arrayObf.setSelected(c.arrayObfuscationEnabled());
         booleanObf.setSelected(c.booleanObfuscationEnabled());
         stringObf.setSelected(c.stringObfuscationEnabled());
+        debugInfoStrip.setSelected(c.debugInfoStrippingEnabled());
         classNamesRandom.setSelected(c.classNamesRandom());
         numberKeyRandom.setSelected(c.numberKeyRandom());
         arrayKeyRandom.setSelected(c.arrayKeyRandom());

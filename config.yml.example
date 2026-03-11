@@ -3,7 +3,7 @@
 # Enable or disable class renaming
 classRenamingEnabled: true
 
-# Obfuscate numeric constants (int/long) using XOR
+# Obfuscate numeric constants (int, long, float, double) using XOR
 numberObfuscationEnabled: true
 
 # Obfuscate array dimensions (new Type[n] -> n hidden with XOR)
@@ -14,6 +14,9 @@ booleanObfuscationEnabled: true
 
 # Obfuscate string literals (encrypt at build time, decrypt at runtime)
 stringObfuscationEnabled: true
+
+# Strip debug info (source file, line numbers, local variable names)
+debugInfoStrippingEnabled: true
 
 # Class name generation
 classNamesRandom: false   # true = random names per build, false = sequential (a, b, c...)

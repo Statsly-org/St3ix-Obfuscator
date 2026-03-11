@@ -9,8 +9,9 @@ import org.objectweb.asm.Opcodes;
 import java.util.Random;
 
 /**
- * Obfuscates integer and long constants in bytecode using XOR.
+ * Obfuscates integer, long, float and double constants in bytecode using XOR.
  * Replaces ldc N with (N ^ key) ^ key to hide the original value.
+ * For float/double, the bit representation is XORed and reconstructed at runtime.
  */
 public final class NumberObfuscator {
 
@@ -97,13 +98,31 @@ public final class NumberObfuscator {
             if (value instanceof Integer i) {
                 emitXorInt(i);
             } else if (value instanceof Long l) {
-                long obfuscated = l ^ longKey;
+                emitXorLong(l);
+            } else if (value instanceof Float f) {
+                int bits = Float.floatToRawIntBits(f);
+                int obfuscated = bits ^ intKey;
+                super.visitLdcInsn(obfuscated);
+                super.visitLdcInsn(intKey);
+                super.visitInsn(Opcodes.IXOR);
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "intBitsToFloat", "(I)F", false);
+            } else if (value instanceof Double d) {
+                long bits = Double.doubleToRawLongBits(d);
+                long obfuscated = bits ^ longKey;
                 super.visitLdcInsn(obfuscated);
                 super.visitLdcInsn(longKey);
                 super.visitInsn(Opcodes.LXOR);
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "longBitsToDouble", "(J)D", false);
             } else {
                 super.visitLdcInsn(value);
             }
+        }
+
+        private void emitXorLong(long value) {
+            long obfuscated = value ^ longKey;
+            super.visitLdcInsn(obfuscated);
+            super.visitLdcInsn(longKey);
+            super.visitInsn(Opcodes.LXOR);
         }
 
         private void emitXorInt(int value) {

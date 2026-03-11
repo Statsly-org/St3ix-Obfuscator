@@ -12,6 +12,7 @@ public record ObfuscatorConfig(
     boolean arrayObfuscationEnabled,
     boolean booleanObfuscationEnabled,
     boolean stringObfuscationEnabled,
+    boolean debugInfoStrippingEnabled,
     boolean classNamesRandom,
     int classNameLength,
     boolean numberKeyRandom,
@@ -30,7 +31,7 @@ public record ObfuscatorConfig(
     }
 
     public static ObfuscatorConfig defaults() {
-        return new ObfuscatorConfig(true, true, true, true, true, false, DEFAULT_CLASS_NAME_LENGTH,
+        return new ObfuscatorConfig(true, true, true, true, true, true, false, DEFAULT_CLASS_NAME_LENGTH,
             false, false, false, false, List.of());
     }
 }
