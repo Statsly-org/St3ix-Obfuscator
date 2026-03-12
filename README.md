@@ -31,13 +31,16 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 ## Features
 
 - **Class renaming** – Short or random names; configurable length
+- **Method renaming** – Obfuscate method names; handles override chains
+- **Local variable & field renaming** *(planned)* – Obfuscate field and local variable names
 - **Homoglyph & invisible chars** – Unicode lookalikes (a→а) and zero-width chars; copy-paste fails
 - **Number obfuscation** – Hides `int`, `long`, `float`, `double` with XOR
 - **Array obfuscation** – Hides array dimensions
 - **Boolean obfuscation** – Hides `true`/`false` literals
 - **String obfuscation** – Encrypts string literals (XOR), decrypts at runtime
 - **Debug info stripping** – Removes source names, line numbers, local variable names
-- **Random options** – Optional random keys and class names per build
+- **Local variable & field renaming** *(planned)* – Obfuscate field and local variable names
+- **Random options** – Optional random keys and class/method names per build
 - **Exclude patterns** – Skip JDK, Bukkit, Minecraft, and custom packages
 - **YAML config** – `config.yml` next to the JAR
 
@@ -137,24 +140,24 @@ public final class DemoService {
 }
 ```
 
-**After obfuscation** (with class renaming, homoglyph, debug stripping, number/string obfuscation):
+**After obfuscation** (class, method, number, string, debug stripping, homoglyph):
 
 ```java
-// а/b.java  (Cyrillic а + invisible char – looks like "a" but isn't)
+// а/b.java  (Cyrillic а – looks like "a" but isn't)
 public final class b {
     public static void main(String[] args) {
         System.out.println(o.a.d(new byte[]{...}, 12345));
         ь var0 = new ь();
-        var0.run();
+        var0.a();   // run() → a()
     }
 }
 
 // а/ь.java  (Cyrillic ь)
 public final class ь {
-    private static final String a = o.a.d(new byte[]{...}, 98765);
-    private int b;
+    private static final String a = o.a.d(new byte[]{...}, 98765);  // SECRET_KEY → a
+    private int b;   // counter → b
     
-    public void run() {
+    public void a() {   // run() → a()
         this.b++;
         int var0 = 25565 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;
         int var1 = 12345 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;
@@ -164,15 +167,52 @@ public final class ь {
 }
 ```
 
-| Transform        | Effect                                                                 |
-|------------------|-----------------------------------------------------------------------|
-| Class renaming   | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`)  |
-| Homoglyph        | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
-| Invisible chars  | Zero-width chars in names – appear normal but differ                 |
-| Number obfuscation | `25565` → `(x ^ key) ^ key`; floats/doubles via bit XOR             |
-| Boolean obfuscation | `true` → `(value ^ key) ^ key`                                    |
-| String obfuscation | `"my-secret-key"` → encrypted bytes, decoded at runtime           |
-| Debug stripping  | Local vars become `var0`, `var1`; line numbers removed               |
+**With Local Variable & Field Renaming** (planned):
+
+When field and local variable renaming is enabled, field names and local variable names (in debug info) are replaced with short obfuscated identifiers:
+
+| Before                         | After (with field/local var renaming)      |
+|--------------------------------|--------------------------------------------|
+| `SECRET_KEY`                   | `f` (field)                                |
+| `counter`                      | `g` (field)                                |
+| `run()`                        | `a()` (method)                             |
+| `service` (local)              | `x` (local)                                |
+| `port`, `seed`, `flag` (locals)| `a`, `b`, `c` (locals)                     |
+
+```java
+// Before (readable)
+private static final String SECRET_KEY = "...";
+private int counter;
+public void run() {
+    DemoService service = new DemoService();
+    int port = 25565;
+    int seed = 12345;
+    boolean flag = true;
+}
+
+// After (with local var & field renaming)
+private static final String f = "...";   // SECRET_KEY → f
+private int g;   // counter → g
+public void a() {   // run() → a()
+    ь x = new ь();   // service → x
+    int a = 25565 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;   // port → a
+    int b = 12345 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;   // seed → b
+    boolean c = (1 ^ 0x5A5A5A5A) ^ 0x5A5A5A5A; // flag → c
+}
+```
+
+| Transform              | Effect                                                                 |
+|------------------------|-----------------------------------------------------------------------|
+| Class renaming         | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`) |
+| Method renaming        | `run()` → `a()` (excludes main, constructors, native)                 |
+| Field renaming (planned) | `SECRET_KEY` → `f`, `counter` → `g`                               |
+| Local var renaming (planned) | `port` → `a`, `seed` → `b`, `service` → `x`                    |
+| Homoglyph             | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
+| Invisible chars       | Zero-width chars in names – appear normal but differ                  |
+| Number obfuscation     | `25565` → `(x ^ key) ^ key`; floats/doubles via bit XOR             |
+| Boolean obfuscation    | `true` → `(value ^ key) ^ key`                                       |
+| String obfuscation    | `"my-secret-key"` → encrypted bytes, decoded at runtime               |
+| Debug stripping       | Local vars become `var0`, `var1` when stripped; line numbers removed  |
 
 ## Documentation
 
