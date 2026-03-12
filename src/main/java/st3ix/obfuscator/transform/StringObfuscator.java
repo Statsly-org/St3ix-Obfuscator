@@ -14,6 +14,7 @@ import java.util.Random;
  * Obfuscates string literals in bytecode using XOR encryption.
  * Replaces LDC "string" with inline decryption bytecode at each call site.
  * No central decoder class – no single point to hook and dump all strings.
+ * Key per class (owner.hashCode) and per string (index in method) for stronger obfuscation.
  */
 public final class StringObfuscator {
 
@@ -92,8 +93,7 @@ public final class StringObfuscator {
         public MethodVisitor visitMethod(int access, String name, String descriptor,
                                          String signature, String[] exceptions) {
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
-            boolean isClinit = "<clinit>".equals(name);
-            return new StringObfuscatorMethodVisitor(mv, key, owner, isClinit);
+            return new StringObfuscatorMethodVisitor(mv, key, owner);
         }
     }
 
@@ -101,13 +101,12 @@ public final class StringObfuscator {
 
         private final int key;
         private final String owner;
-        private final boolean useRuntimeKey;
+        private int stringIndex;
 
-        StringObfuscatorMethodVisitor(MethodVisitor mv, int key, String owner, boolean useRuntimeKey) {
+        StringObfuscatorMethodVisitor(MethodVisitor mv, int key, String owner) {
             super(Opcodes.ASM9, mv);
             this.key = key;
             this.owner = owner;
-            this.useRuntimeKey = useRuntimeKey;
         }
 
         @Override
@@ -120,14 +119,11 @@ public final class StringObfuscator {
         }
 
         private void emitEncryptedString(String s) {
-            int actualKey = useRuntimeKey ? key ^ owner.hashCode() : key;
+            int idx = stringIndex++;
+            int actualKey = key ^ owner.hashCode() ^ idx;
             byte[] encrypted = encrypt(s, actualKey);
             emitByteArray(encrypted);
-            if (useRuntimeKey) {
-                emitRuntimeKey();
-            } else {
-                super.visitLdcInsn(key);
-            }
+            emitRuntimeKey(idx);
             emitInlineDecrypt();
         }
 
@@ -173,12 +169,12 @@ public final class StringObfuscator {
             super.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>", "([BLjava/nio/charset/Charset;)V", false);
         }
 
-        /** Emits: key ^ thisClass.getName().hashCode() - prevents static evaluation by decompilers */
-        private void emitRuntimeKey() {
+        /** Emits: (key ^ stringIndex) ^ thisClass.getName().hashCode() = actualKey per class and per string */
+        private void emitRuntimeKey(int stringIndex) {
             super.visitLdcInsn(Type.getObjectType(owner));
             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "hashCode", "()I", false);
-            super.visitLdcInsn(key);
+            super.visitLdcInsn(key ^ stringIndex);
             super.visitInsn(Opcodes.IXOR);
         }
 
