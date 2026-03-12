@@ -73,6 +73,7 @@ public final class ObfuscatorGui {
             outputDir.setText(defaultOutputDir.toAbsolutePath().toString());
 
             JCheckBox classRename = new JCheckBox("Class renaming", true);
+            JCheckBox methodRename = new JCheckBox("Method renaming", true);
             JCheckBox numberObf = new JCheckBox("Number obfuscation", true);
             JCheckBox arrayObf = new JCheckBox("Array obfuscation", true);
             JCheckBox booleanObf = new JCheckBox("Boolean obfuscation", true);
@@ -87,6 +88,11 @@ public final class ObfuscatorGui {
             JCheckBox stringKeyRandom = new JCheckBox("Random string key", false);
             JSpinner classNameLength = new JSpinner(new SpinnerNumberModel(6, 1, 32, 1));
             classNameLength.setPreferredSize(new Dimension(60, 24));
+            JSpinner methodNameLength = new JSpinner(new SpinnerNumberModel(4, 1, 32, 1));
+            methodNameLength.setPreferredSize(new Dimension(60, 24));
+            JCheckBox methodNamesRandom = new JCheckBox("Random method names", false);
+            JCheckBox methodNamesHomoglyph = new JCheckBox("Homoglyph method names", false);
+            JCheckBox methodNamesInvisibleChars = new JCheckBox("Invisible chars in method names", false);
             JTextArea excludeArea = new JTextArea(4, 28);
             excludeArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
             excludeArea.setLineWrap(false);
@@ -149,19 +155,21 @@ public final class ObfuscatorGui {
             content.add(step1, STEP_INPUT);
 
             // Step 2: Obfuscation
-            JPanel step2 = buildStep2Panel(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNameLength);
+            JPanel step2 = buildStep2Panel(classRename, methodRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNameLength, methodNameLength);
             content.add(step2, STEP_OBFUSCATION);
 
             // Step 3: Advanced
             JPanel step3 = buildStep3Panel(classNamesRandom, classNamesHomoglyph, classNamesInvisibleChars,
+                methodNamesRandom, methodNamesHomoglyph, methodNamesInvisibleChars,
                 numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeArea,
-                frame, classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNameLength);
+                frame, classRename, methodRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNameLength, methodNameLength);
             content.add(step3, STEP_ADVANCED);
 
             // Step 4: Run
             JPanel step4 = buildStep4Panel(inputPath, outputName, outputDir, excludeArea,
-                classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip,
+                classRename, methodRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip,
                 classNamesRandom, classNamesHomoglyph, classNamesInvisibleChars,
+                methodNamesRandom, methodNameLength, methodNamesHomoglyph, methodNamesInvisibleChars,
                 numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength,
                 frame, outputPane);
             content.add(step4, STEP_RUN);
@@ -335,8 +343,8 @@ public final class ObfuscatorGui {
         return step;
     }
 
-    private static JPanel buildStep2Panel(JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf,
-            JCheckBox booleanObf, JCheckBox stringObf, JCheckBox debugInfoStrip, JSpinner classNameLength) {
+    private static JPanel buildStep2Panel(JCheckBox classRename, JCheckBox methodRename, JCheckBox numberObf, JCheckBox arrayObf,
+            JCheckBox booleanObf, JCheckBox stringObf, JCheckBox debugInfoStrip, JSpinner classNameLength, JSpinner methodNameLength) {
         JPanel step = new JPanel(new BorderLayout(8, 8));
         step.setBackground(BG_MAIN);
         step.setName(STEP_OBFUSCATION);
@@ -362,6 +370,7 @@ public final class ObfuscatorGui {
         };
         grid.setBackground(BG_PANEL);
         grid.add(classRename);
+        grid.add(methodRename);
         grid.add(numberObf);
         grid.add(arrayObf);
         grid.add(booleanObf);
@@ -372,9 +381,14 @@ public final class ObfuscatorGui {
         lengthRow.add(new JLabel("Class name length:"));
         lengthRow.add(classNameLength);
         grid.add(lengthRow);
+        JPanel methodLengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        methodLengthRow.setBackground(BG_PANEL);
+        methodLengthRow.add(new JLabel("Method name length:"));
+        methodLengthRow.add(methodNameLength);
+        grid.add(methodLengthRow);
         inner.add(grid, BorderLayout.CENTER);
 
-        JLabel hint = new JLabel("<html>Enable or disable obfuscation types. Class name length applies when renaming.</html>");
+        JLabel hint = new JLabel("<html>Enable or disable obfuscation types. Class/method name length applies when renaming.</html>");
         hint.setFont(hint.getFont().deriveFont(10f));
         hint.setForeground(new Color(0x666666));
         hint.setBorder(new EmptyBorder(8, 0, 0, 0));
@@ -385,10 +399,11 @@ public final class ObfuscatorGui {
     }
 
     private static JPanel buildStep3Panel(JCheckBox classNamesRandom, JCheckBox classNamesHomoglyph, JCheckBox classNamesInvisibleChars,
+            JCheckBox methodNamesRandom, JCheckBox methodNamesHomoglyph, JCheckBox methodNamesInvisibleChars,
             JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom,
             JTextArea excludeArea, JFrame frame,
-            JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf, JCheckBox stringObf,
-            JCheckBox debugInfoStrip, JSpinner classNameLength) {
+            JCheckBox classRename, JCheckBox methodRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf, JCheckBox stringObf,
+            JCheckBox debugInfoStrip, JSpinner classNameLength, JSpinner methodNameLength) {
         JPanel step = new JPanel(new BorderLayout(8, 8));
         step.setBackground(BG_MAIN);
         step.setName(STEP_ADVANCED);
@@ -407,6 +422,9 @@ public final class ObfuscatorGui {
         classOpts.add(classNamesRandom);
         classOpts.add(classNamesHomoglyph);
         classOpts.add(classNamesInvisibleChars);
+        classOpts.add(methodNamesRandom);
+        classOpts.add(methodNamesHomoglyph);
+        classOpts.add(methodNamesInvisibleChars);
         JPanel keyOpts = new JPanel(new GridLayout(0, 2, 6, 4));
         keyOpts.setBackground(BG_PANEL);
         keyOpts.add(numberKeyRandom);
@@ -440,9 +458,9 @@ public final class ObfuscatorGui {
                 ToastNotification.show(frame, "No config.yml found next to JAR. Using defaults.", ToastNotification.Type.INFO);
                 return;
             }
-            applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
-                classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
-                stringKeyRandom, classNameLength, excludeArea, result.config());
+            applyConfig(classRename, methodRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
+                classNamesHomoglyph, classNamesInvisibleChars, methodNamesRandom, methodNameLength, methodNamesHomoglyph, methodNamesInvisibleChars,
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
             ToastNotification.show(frame, "Config loaded.", ToastNotification.Type.SUCCESS);
         });
         JButton browseConfigBtn = new JButton("Browse config...");
@@ -454,9 +472,9 @@ public final class ObfuscatorGui {
             if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 try {
                     var result = ConfigLoader.loadFrom(fc.getSelectedFile().toPath());
-                    applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
-                        classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
-                        stringKeyRandom, classNameLength, excludeArea, result.config());
+                    applyConfig(classRename, methodRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
+                        classNamesHomoglyph, classNamesInvisibleChars, methodNamesRandom, methodNameLength, methodNamesHomoglyph, methodNamesInvisibleChars,
+                        numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength, excludeArea, result.config());
                     ToastNotification.show(frame, "Config loaded from " + result.configPath().getFileName(), ToastNotification.Type.SUCCESS);
                 } catch (IOException ex) {
                     ToastNotification.show(frame, "Config invalid: " + ex.getMessage(), ToastNotification.Type.ERROR);
@@ -484,8 +502,9 @@ public final class ObfuscatorGui {
     }
 
     private static JPanel buildStep4Panel(JTextField inputPath, JTextField outputName, JTextField outputDir, JTextArea excludeArea,
-            JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf, JCheckBox stringObf,
+            JCheckBox classRename, JCheckBox methodRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf, JCheckBox stringObf,
             JCheckBox debugInfoStrip, JCheckBox classNamesRandom, JCheckBox classNamesHomoglyph, JCheckBox classNamesInvisibleChars,
+            JCheckBox methodNamesRandom, JSpinner methodNameLength, JCheckBox methodNamesHomoglyph, JCheckBox methodNamesInvisibleChars,
             JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom,
             JSpinner classNameLength, JFrame frame, JTextPane outputPane) {
         JPanel step = new JPanel(new BorderLayout(8, 8));
@@ -562,6 +581,7 @@ public final class ObfuscatorGui {
 
             ObfuscatorConfig config = new ObfuscatorConfig(
                 classRename.isSelected(),
+                methodRename.isSelected(),
                 numberObf.isSelected(),
                 arrayObf.isSelected(),
                 booleanObf.isSelected(),
@@ -571,6 +591,10 @@ public final class ObfuscatorGui {
                 (Integer) classNameLength.getValue(),
                 classNamesHomoglyph.isSelected(),
                 classNamesInvisibleChars.isSelected(),
+                methodNamesRandom.isSelected(),
+                (Integer) methodNameLength.getValue(),
+                methodNamesHomoglyph.isSelected(),
+                methodNamesInvisibleChars.isSelected(),
                 numberKeyRandom.isSelected(),
                 arrayKeyRandom.isSelected(),
                 booleanKeyRandom.isSelected(),
@@ -618,12 +642,14 @@ public final class ObfuscatorGui {
         return step;
     }
 
-    private static void applyConfig(JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf,
-            JCheckBox stringObf, JCheckBox debugInfoStrip, JCheckBox classNamesRandom, JCheckBox classNamesHomoglyph,
-            JCheckBox classNamesInvisibleChars, JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom,
-            JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom, JSpinner classNameLength, JTextArea excludeArea,
-            ObfuscatorConfig c) {
+    private static void applyConfig(JCheckBox classRename, JCheckBox methodRename, JCheckBox numberObf, JCheckBox arrayObf,
+            JCheckBox booleanObf, JCheckBox stringObf, JCheckBox debugInfoStrip, JCheckBox classNamesRandom,
+            JCheckBox classNamesHomoglyph, JCheckBox classNamesInvisibleChars, JCheckBox methodNamesRandom,
+            JSpinner methodNameLength, JCheckBox methodNamesHomoglyph, JCheckBox methodNamesInvisibleChars,
+            JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom,
+            JSpinner classNameLength, JTextArea excludeArea, ObfuscatorConfig c) {
         classRename.setSelected(c.classRenamingEnabled());
+        methodRename.setSelected(c.methodRenamingEnabled());
         numberObf.setSelected(c.numberObfuscationEnabled());
         arrayObf.setSelected(c.arrayObfuscationEnabled());
         booleanObf.setSelected(c.booleanObfuscationEnabled());
@@ -632,6 +658,10 @@ public final class ObfuscatorGui {
         classNamesRandom.setSelected(c.classNamesRandom());
         classNamesHomoglyph.setSelected(c.classNamesHomoglyph());
         classNamesInvisibleChars.setSelected(c.classNamesInvisibleChars());
+        methodNamesRandom.setSelected(c.methodNamesRandom());
+        methodNameLength.setValue(c.methodNameLength());
+        methodNamesHomoglyph.setSelected(c.methodNamesHomoglyph());
+        methodNamesInvisibleChars.setSelected(c.methodNamesInvisibleChars());
         numberKeyRandom.setSelected(c.numberKeyRandom());
         arrayKeyRandom.setSelected(c.arrayKeyRandom());
         booleanKeyRandom.setSelected(c.booleanKeyRandom());

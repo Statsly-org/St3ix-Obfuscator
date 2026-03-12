@@ -3,6 +3,9 @@
 # Enable or disable class renaming
 classRenamingEnabled: true
 
+# Enable or disable method renaming (excludes constructors, main, native, enum methods)
+methodRenamingEnabled: true
+
 # Obfuscate numeric constants (int, long, float, double) using XOR
 numberObfuscationEnabled: true
 
@@ -23,6 +26,12 @@ classNamesRandom: false   # true = random names per build, false = sequential (a
 classNameLength: 6       # minimum length of class names (1-32). Longer = harder to read.
 classNamesHomoglyph: false   # use lookalike chars (Cyrillic а vs Latin a); copy-paste fails
 classNamesInvisibleChars: false  # inject zero-width chars; names appear normal but differ
+
+# Method name generation
+methodNamesRandom: false   # true = random method names per build, false = sequential
+methodNameLength: 4        # minimum length of method names (1-32)
+methodNamesHomoglyph: false   # use lookalike chars for method names
+methodNamesInvisibleChars: false  # inject zero-width chars in method names
 
 # Obfuscation keys (XOR)
 numberKeyRandom: false   # true = random key per build, false = fixed key
