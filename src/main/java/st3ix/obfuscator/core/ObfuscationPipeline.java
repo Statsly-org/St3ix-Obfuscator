@@ -110,9 +110,6 @@ public final class ObfuscationPipeline {
                     classesToWrite = classesToWrite.stream()
                         .map(ce -> new ClassEntry(ce.path(), ce.internalName(), so.transform(ce.bytes())))
                         .toList();
-                    byte[] decoderBytes = StringObfuscator.generateDecoderClass();
-                    classesToWrite = new ArrayList<>(classesToWrite);
-                    classesToWrite.add(new ClassEntry(StringObfuscator.DECODER_CLASS + ".class", StringObfuscator.DECODER_CLASS, decoderBytes));
                     Logger.success("String obfuscation applied");
                 }
                 if (config.debugInfoStrippingEnabled()) {
@@ -239,10 +236,6 @@ public final class ObfuscationPipeline {
             }
             String newPath = newInternal + ".class";
             transformed.add(new ClassEntry(newPath, newInternal, bytes));
-        }
-        if (stringObfEnabled) {
-            byte[] decoderBytes = StringObfuscator.generateDecoderClass();
-            transformed.add(new ClassEntry(StringObfuscator.DECODER_CLASS + ".class", StringObfuscator.DECODER_CLASS, decoderBytes));
         }
         Logger.success("Class renaming successful. Renamed a total of %d class(es)", renamedCount);
 

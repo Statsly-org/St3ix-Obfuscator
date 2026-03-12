@@ -34,10 +34,10 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 - **Method renaming** – Obfuscate method names; handles override chains
 - **Field renaming** – Obfuscate field names; excludes serialVersionUID and enum constants
 - **Homoglyph & invisible chars** – Unicode lookalikes (a→а) and zero-width chars; copy-paste fails
-- **Number obfuscation** – Hides `int`, `long`, `float`, `double` with XOR
+- **Number obfuscation** – Hides `int` via math expressions (`123` → `(50*3)-27`); `long`/`float`/`double` via XOR
 - **Array obfuscation** – Hides array dimensions
 - **Boolean obfuscation** – Hides `true`/`false` literals
-- **String obfuscation** – Encrypts string literals (XOR), decrypts at runtime
+- **String obfuscation** – Encrypts string literals (XOR); decryption inlined at each use (no central decoder)
 - **Debug info stripping** – Removes source names, line numbers, local variable names
 - **Local variable renaming** *(planned)* – Obfuscate local variable names when debug kept
 - **Random options** – Optional random keys and class/method names per build
@@ -143,41 +143,51 @@ public final class DemoService {
 **After obfuscation** (class, method, number, string, debug stripping, homoglyph):
 
 ```java
-// а/b.java  (Cyrillic а – looks like "a" but isn't)
+// Before: central decoder o.a.d() – one breakpoint = all strings
+// After: inline decrypt – each string decrypted at its use site
+
 public final class b {
     public static void main(String[] args) {
-        System.out.println(o.a.d(new byte[]{...}, 12345));
+        // Inline: byte[] + XOR loop + new String(...) – no o.a.d()
+        byte[] enc = new byte[]{...};
+        byte[] out = new byte[enc.length];
+        for (int i = 0; i < enc.length; i++)
+            out[i] = (byte)(enc[i] ^ ((key + i) & 0xFF));
+        System.out.println(new String(out, StandardCharsets.UTF_8));
         ь var0 = new ь();
-        var0.a();   // run() → a()
+        var0.a();
     }
 }
 
-// а/ь.java  (Cyrillic ь)
 public final class ь {
-    private static final String a = o.a.d(new byte[]{...}, 98765);  // SECRET_KEY → a
-    private int b;   // counter → b
+    private static final String a = /* inline decrypt */;
+    private int b;
     
-    public void a() {   // run() → a()
+    public void a() {
         this.b++;
-        int var0 = 25565 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;
-        int var1 = 12345 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;
-        boolean var2 = (1 ^ 0x5A5A5A5A) ^ 0x5A5A5A5A;
+        int var0 = 25621 - 56;      // 25565 via expression
+        int var1 = 37 * 333 + 24;   // 12345 via expression
+        boolean var2 = 0x... ^ 0x...;  // boolean XOR
         System.out.println("port=" + var0 + ", seed=" + var1);
     }
 }
 ```
 
-| Transform        | Effect                                                                 |
-|------------------|-----------------------------------------------------------------------|
-| Class renaming   | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`)  |
-| Method renaming  | `run()` → `a()` (excludes main, constructors, native)                 |
-| Field renaming   | `SECRET_KEY` → `f`, `counter` → `g`                                  |
-| Homoglyph        | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
-| Invisible chars  | Zero-width chars in names – appear normal but differ                 |
-| Number obfuscation | `25565` → `(x ^ key) ^ key`; floats/doubles via bit XOR             |
+| Transform         | Effect                                                                 |
+|-------------------|-----------------------------------------------------------------------|
+| Class renaming    | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`)  |
+| Method renaming   | `run()` → `a()` (excludes main, constructors, native)                 |
+| Field renaming    | `SECRET_KEY` → `f`, `counter` → `g`                                  |
+| Homoglyph         | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
+| Invisible chars   | Zero-width chars in names – appear normal but differ                  |
+| Number obfuscation  | `25565` → `25621-56`, `12345` → `37*333+24` (math expressions)     |
 | Boolean obfuscation | `true` → `(value ^ key) ^ key`                                    |
-| String obfuscation | `"my-secret-key"` → encrypted bytes, decoded at runtime           |
-| Debug stripping  | Local vars become `var0`, `var1`; line numbers removed               |
+| String obfuscation  | Inline XOR decrypt at each use; no central decoder → no dump point |
+| Debug stripping   | Local vars become `var0`, `var1`; line numbers removed                |
+
+### Strength
+
+Obfuscation raises the bar for casual and automated reverse engineering. Numbers are hidden as expressions instead of trivial XOR; strings are decrypted inline with no single hook point. Realistic caveats: determined reversers can still analyze the code; obfuscation is a deterrent, not unbreakable protection.
 
 ## Documentation
 
