@@ -167,52 +167,15 @@ public final class ь {
 }
 ```
 
-**With Local Variable & Field Renaming** (planned):
-
-When field and local variable renaming is enabled, field names and local variable names (in debug info) are replaced with short obfuscated identifiers:
-
-| Before                         | After (with field/local var renaming)      |
-|--------------------------------|--------------------------------------------|
-| `SECRET_KEY`                   | `f` (field)                                |
-| `counter`                      | `g` (field)                                |
-| `run()`                        | `a()` (method)                             |
-| `service` (local)              | `x` (local)                                |
-| `port`, `seed`, `flag` (locals)| `a`, `b`, `c` (locals)                     |
-
-```java
-// Before (readable)
-private static final String SECRET_KEY = "...";
-private int counter;
-public void run() {
-    DemoService service = new DemoService();
-    int port = 25565;
-    int seed = 12345;
-    boolean flag = true;
-}
-
-// After (with local var & field renaming)
-private static final String f = "...";   // SECRET_KEY → f
-private int g;   // counter → g
-public void a() {   // run() → a()
-    ь x = new ь();   // service → x
-    int a = 25565 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;   // port → a
-    int b = 12345 ^ 0x5A5A5A5A ^ 0x5A5A5A5A;   // seed → b
-    boolean c = (1 ^ 0x5A5A5A5A) ^ 0x5A5A5A5A; // flag → c
-}
-```
-
-| Transform              | Effect                                                                 |
-|------------------------|-----------------------------------------------------------------------|
-| Class renaming         | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`) |
-| Method renaming        | `run()` → `a()` (excludes main, constructors, native)                 |
-| Field renaming (planned) | `SECRET_KEY` → `f`, `counter` → `g`                               |
-| Local var renaming (planned) | `port` → `a`, `seed` → `b`, `service` → `x`                    |
-| Homoglyph             | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
-| Invisible chars       | Zero-width chars in names – appear normal but differ                  |
-| Number obfuscation     | `25565` → `(x ^ key) ^ key`; floats/doubles via bit XOR             |
-| Boolean obfuscation    | `true` → `(value ^ key) ^ key`                                       |
-| String obfuscation    | `"my-secret-key"` → encrypted bytes, decoded at runtime               |
-| Debug stripping       | Local vars become `var0`, `var1` when stripped; line numbers removed  |
+| Transform        | Effect                                                                 |
+|------------------|-----------------------------------------------------------------------|
+| Class renaming   | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`)  |
+| Homoglyph        | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
+| Invisible chars  | Zero-width chars in names – appear normal but differ                 |
+| Number obfuscation | `25565` → `(x ^ key) ^ key`; floats/doubles via bit XOR             |
+| Boolean obfuscation | `true` → `(value ^ key) ^ key`                                    |
+| String obfuscation | `"my-secret-key"` → encrypted bytes, decoded at runtime           |
+| Debug stripping  | Local vars become `var0`, `var1`; line numbers removed               |
 
 ## Documentation
 
