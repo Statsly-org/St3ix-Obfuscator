@@ -25,6 +25,7 @@ public final class ClassMapping {
     private final List<String> excludePrefixes = new ArrayList<>();
     private final Map<String, String> oldToNew = new HashMap<>();
     private final NameGenerator nameGen;
+    private boolean excludeAll;
 
     public ClassMapping() {
         this(false, 1);
@@ -52,12 +53,19 @@ public final class ClassMapping {
 
     /**
      * Adds exclude patterns from config. Accepts dot or slash notation (e.g. org.bukkit or org/bukkit).
+     * Use "*" to exclude all classes from renaming.
      */
     public void addExcludes(List<String> patterns) {
         if (patterns == null) return;
         for (String p : patterns) {
             if (p == null || p.isBlank()) continue;
-            String internal = p.trim().replace('.', '/');
+            String trimmed = p.trim();
+            if ("*".equals(trimmed)) {
+                excludeAll = true;
+                return;
+            }
+            String internal = trimmed.replace('.', '/');
+            if (internal.endsWith("/*")) internal = internal.substring(0, internal.length() - 1);
             if (!internal.endsWith("/")) internal += "/";
             excludePrefixes.add(internal);
         }
@@ -73,7 +81,7 @@ public final class ClassMapping {
         if (oldToNew.containsKey(internalName)) {
             return oldToNew.get(internalName);
         }
-        if (isExcluded(internalName)) {
+        if (excludeAll || isExcluded(internalName)) {
             oldToNew.put(internalName, internalName);
             return internalName;
         }

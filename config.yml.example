@@ -31,8 +31,8 @@ booleanKeyRandom: false  # true = random key per build, false = fixed key
 stringKeyRandom: false   # true = random key per build, false = fixed key
 
 # Classes/packages to exclude from renaming.
-# Use dot or slash notation. Prefix matches (org.bukkit excludes org.bukkit.*)
-# Built-in excludes: java.*, javax.*, org.bukkit.*, net.minecraft.*, org.spigotmc.*, etc.
+# Use "*" to exclude ALL classes (no renaming). Prefix: com.example excludes com.example.*
+# Built-in excludes: java.*, javax.*, org.bukkit.*, net.minecraft.*, etc.
 excludeClasses:
   - com.myapp.sensitive
   - org.example.api
