@@ -12,6 +12,8 @@ import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.*;
 import java.awt.*;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -34,9 +36,7 @@ public final class ObfuscatorGui {
     private static final Color SIDEBAR_BG = new Color(0x2D333B);
     private static final Color SIDEBAR_TEXT = new Color(0xB1BAC4);
     private static final Color SIDEBAR_ACTIVE_BG = new Color(0x21262D);
-    private static final Color SIDEBAR_ACTIVE_TEXT = Color.WHITE;
     private static final Color SIDEBAR_HOVER = new Color(0x58A6FF);
-    private static final Color SIDEBAR_ACCENT = new Color(0x58A6FF);
 
     private static final String EXCLUDE_INFO = "Use \"*\" to exclude all classes. Prefix: com.example excludes com.example.*. java.*, javax.*, etc. are always excluded.";
 
@@ -385,24 +385,9 @@ public final class ObfuscatorGui {
         grid.add(booleanObf);
         grid.add(stringObf);
         grid.add(debugInfoStrip);
-        JPanel lengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        lengthRow.setBackground(BG_PANEL);
-        lengthRow.add(new JLabel("Class name length:"));
-        lengthRow.add(classNameLength);
-        grid.add(lengthRow);
-        JPanel methodLengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        methodLengthRow.setBackground(BG_PANEL);
-        methodLengthRow.add(new JLabel("Method name length:"));
-        methodLengthRow.add(methodNameLength);
-        grid.add(methodLengthRow);
-        JPanel fieldLengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        fieldLengthRow.setBackground(BG_PANEL);
-        fieldLengthRow.add(new JLabel("Field name length:"));
-        fieldLengthRow.add(fieldNameLength);
-        grid.add(fieldLengthRow);
         inner.add(grid, BorderLayout.CENTER);
 
-        JLabel hint = new JLabel("<html>Enable or disable obfuscation types. Class/method name length applies when renaming.</html>");
+        JLabel hint = new JLabel("<html>Enable or disable obfuscation types. Name length and other options are in Advanced.</html>");
         hint.setFont(hint.getFont().deriveFont(10f));
         hint.setForeground(new Color(0x666666));
         hint.setBorder(new EmptyBorder(8, 0, 0, 0));
@@ -410,6 +395,55 @@ public final class ObfuscatorGui {
 
         step.add(inner, BorderLayout.CENTER);
         return step;
+    }
+
+    /** Creates an expandable section with header (clickable) and content panel. */
+    private static JPanel createExpandableSection(String title, JPanel contentPanel, boolean expandedByDefault) {
+        JPanel section = new JPanel(new BorderLayout(0, 0));
+        section.setBackground(BG_PANEL);
+
+        JLabel arrowLabel = new JLabel(expandedByDefault ? "▼ " : "▶ ");
+        arrowLabel.setFont(arrowLabel.getFont().deriveFont(Font.BOLD, 11f));
+        arrowLabel.setForeground(new Color(0x24292F));
+
+        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 6));
+        header.setBackground(BG_PANEL);
+        header.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER),
+            new EmptyBorder(6, 8, 6, 8)));
+        header.add(arrowLabel);
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 11f));
+        titleLabel.setForeground(new Color(0x24292F));
+        header.add(titleLabel);
+        header.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        contentPanel.setBackground(BG_PANEL);
+        contentPanel.setBorder(new EmptyBorder(0, 20, 12, 8));
+        contentPanel.setVisible(expandedByDefault);
+
+        Runnable toggle = () -> {
+            boolean nowVisible = !contentPanel.isVisible();
+            contentPanel.setVisible(nowVisible);
+            arrowLabel.setText(nowVisible ? "▼ " : "▶ ");
+        };
+
+        header.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) { toggle.run(); }
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                header.setBackground(new Color(0xF0F0F0));
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                header.setBackground(BG_PANEL);
+            }
+        });
+
+        section.add(header, BorderLayout.NORTH);
+        section.add(contentPanel, BorderLayout.CENTER);
+        return section;
     }
 
     private static JPanel buildStep3Panel(JCheckBox classNamesRandom, JCheckBox classNamesHomoglyph, JCheckBox classNamesInvisibleChars,
@@ -430,30 +464,56 @@ public final class ObfuscatorGui {
                 0, 0, null, new Color(0x24292F)),
             new EmptyBorder(12, 16, 16, 16)));
 
-        JPanel top = new JPanel(new BorderLayout(6, 6));
-        top.setBackground(BG_PANEL);
-        JPanel classOpts = new JPanel(new GridLayout(0, 2, 6, 4));
-        classOpts.setBackground(BG_PANEL);
-        classOpts.add(classNamesRandom);
-        classOpts.add(classNamesHomoglyph);
-        classOpts.add(classNamesInvisibleChars);
-        classOpts.add(methodNamesRandom);
-        classOpts.add(methodNamesHomoglyph);
-        classOpts.add(methodNamesInvisibleChars);
-        classOpts.add(fieldNamesRandom);
-        classOpts.add(fieldNamesHomoglyph);
-        classOpts.add(fieldNamesInvisibleChars);
-        JPanel keyOpts = new JPanel(new GridLayout(0, 2, 6, 4));
-        keyOpts.setBackground(BG_PANEL);
-        keyOpts.add(numberKeyRandom);
-        keyOpts.add(arrayKeyRandom);
-        keyOpts.add(booleanKeyRandom);
-        keyOpts.add(stringKeyRandom);
-        JPanel optsRow = new JPanel(new GridLayout(2, 1, 6, 6));
-        optsRow.setBackground(BG_PANEL);
-        optsRow.add(classOpts);
-        optsRow.add(keyOpts);
-        top.add(optsRow, BorderLayout.NORTH);
+        JPanel classContent = new JPanel(new GridLayout(0, 2, 6, 4));
+        classContent.setBackground(BG_PANEL);
+        JPanel classLengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        classLengthRow.setBackground(BG_PANEL);
+        classLengthRow.add(new JLabel("Name length:"));
+        classLengthRow.add(classNameLength);
+        classContent.add(classLengthRow);
+        classContent.add(new JPanel());
+        classContent.add(classNamesRandom);
+        classContent.add(classNamesHomoglyph);
+        classContent.add(classNamesInvisibleChars);
+
+        JPanel methodContent = new JPanel(new GridLayout(0, 2, 6, 4));
+        methodContent.setBackground(BG_PANEL);
+        JPanel methodLengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        methodLengthRow.setBackground(BG_PANEL);
+        methodLengthRow.add(new JLabel("Name length:"));
+        methodLengthRow.add(methodNameLength);
+        methodContent.add(methodLengthRow);
+        methodContent.add(new JPanel());
+        methodContent.add(methodNamesRandom);
+        methodContent.add(methodNamesHomoglyph);
+        methodContent.add(methodNamesInvisibleChars);
+
+        JPanel fieldContent = new JPanel(new GridLayout(0, 2, 6, 4));
+        fieldContent.setBackground(BG_PANEL);
+        JPanel fieldLengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        fieldLengthRow.setBackground(BG_PANEL);
+        fieldLengthRow.add(new JLabel("Name length:"));
+        fieldLengthRow.add(fieldNameLength);
+        fieldContent.add(fieldLengthRow);
+        fieldContent.add(new JPanel());
+        fieldContent.add(fieldNamesRandom);
+        fieldContent.add(fieldNamesHomoglyph);
+        fieldContent.add(fieldNamesInvisibleChars);
+
+        JPanel keyContent = new JPanel(new GridLayout(0, 2, 6, 4));
+        keyContent.setBackground(BG_PANEL);
+        keyContent.add(numberKeyRandom);
+        keyContent.add(arrayKeyRandom);
+        keyContent.add(booleanKeyRandom);
+        keyContent.add(stringKeyRandom);
+
+        JPanel sectionsContainer = new JPanel();
+        sectionsContainer.setLayout(new BoxLayout(sectionsContainer, BoxLayout.Y_AXIS));
+        sectionsContainer.setBackground(BG_PANEL);
+        sectionsContainer.add(createExpandableSection("Class Renaming", classContent, false));
+        sectionsContainer.add(createExpandableSection("Method Renaming", methodContent, false));
+        sectionsContainer.add(createExpandableSection("Field Renaming", fieldContent, false));
+        sectionsContainer.add(createExpandableSection("Obfuscation Keys (XOR)", keyContent, false));
 
         JPanel homoglyphInfo = new JPanel(new BorderLayout(4, 4));
         homoglyphInfo.setBackground(BG_PANEL);
@@ -463,7 +523,6 @@ public final class ObfuscatorGui {
         infoLbl.setForeground(new Color(0x555555));
         infoLbl.setBorder(new EmptyBorder(4, 0, 8, 0));
         homoglyphInfo.add(infoLbl, BorderLayout.NORTH);
-        top.add(homoglyphInfo, BorderLayout.CENTER);
 
         JPanel configRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
         configRow.setBackground(BG_PANEL);
@@ -503,19 +562,43 @@ public final class ObfuscatorGui {
         });
         configRow.add(loadConfigBtn);
         configRow.add(browseConfigBtn);
-        top.add(configRow, BorderLayout.SOUTH);
 
-        inner.add(top, BorderLayout.NORTH);
+        JPanel topSection = new JPanel(new BorderLayout(6, 6));
+        topSection.setBackground(BG_PANEL);
+        topSection.add(sectionsContainer, BorderLayout.NORTH);
+        topSection.add(homoglyphInfo, BorderLayout.CENTER);
+        topSection.add(configRow, BorderLayout.SOUTH);
+
+        JScrollPane scrollPane = new JScrollPane(topSection);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(BG_PANEL);
+        scrollPane.setMinimumSize(new Dimension(0, 140));
 
         JPanel excludePanel = new JPanel(new BorderLayout(4, 4));
         excludePanel.setBackground(BG_PANEL);
         excludePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Exclude classes (one per line)"));
-        excludePanel.add(new JScrollPane(excludeArea), BorderLayout.CENTER);
+        JScrollPane excludeScroll = new JScrollPane(excludeArea);
+        excludePanel.setMinimumSize(new Dimension(0, 80));
+        excludePanel.add(excludeScroll, BorderLayout.CENTER);
         JLabel excludeInfo = new JLabel(EXCLUDE_INFO);
         excludeInfo.setFont(excludeInfo.getFont().deriveFont(10f));
         excludeInfo.setForeground(new Color(0x666666));
         excludePanel.add(excludeInfo, BorderLayout.SOUTH);
-        inner.add(excludePanel, BorderLayout.CENTER);
+
+        // Proportional layout: sections ~65%, exclude ~35%
+        inner.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(0, 0, 8, 0);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 0.65;
+        inner.add(scrollPane, gbc);
+        gbc.gridy = 1;
+        gbc.weighty = 0.35;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        inner.add(excludePanel, gbc);
 
         step.add(inner, BorderLayout.CENTER);
         return step;
