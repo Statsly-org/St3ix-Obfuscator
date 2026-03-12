@@ -117,7 +117,6 @@ Or run `test-obfuscate.bat` from the project root for a full build and test.
 **Before obfuscation** (decompiled):
 
 ```java
-// example/Main.java
 package example;
 
 public final class Main {
@@ -146,8 +145,6 @@ public final class LicenseValidator {
 **After obfuscation** (class, method, number, string, debug stripping, homoglyph):
 
 ```java
-// Before: central decoder o.a.d() – one breakpoint = all strings
-// After: inline decrypt – each string decrypted at its use site
 
 public final class b {
     public static void main(String[] args) {
@@ -197,6 +194,7 @@ Realistic caveats: determined reversers can still trace decryption logic; obfusc
 
 ## Documentation
 
+- **Support Server** – [Discord](https://discord.gg/bfqFGqFa99)
 - [Features.md](Features.md) – Current and planned features
 - [docs/HOMOGLYPH_INFO.md](docs/HOMOGLYPH_INFO.md) – Homoglyph & invisible char obfuscation
 - [CONTRIBUTING.md](CONTRIBUTING.md) – Contribution guidelines
