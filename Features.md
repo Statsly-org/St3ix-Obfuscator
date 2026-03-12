@@ -12,11 +12,11 @@
 - **Invisible character injection** – Zero-width chars (U+200B, etc.) in names. Safe for JVM; harder to detect and remove.
 
 ### Data Obfuscation
-- **Number obfuscation** – Hides `int`, `long`, `float` and `double` constants using XOR (`42` → `(42 ^ key) ^ key`; floats/doubles via bit representation)
+- **Number obfuscation** – Hides `int` constants via math expressions (`123` → `(50*3)-27`, `(a<<n)+b`, etc.); decompilers show expressions, not literals. `long`/`float`/`double` still use XOR. Less prone to constant folding than simple XOR.
 - **Array dimension obfuscation** – Hides array sizes (`new int[8]` → `new int[(8 ^ key) ^ key]`)
 - **Boolean obfuscation** – Hides `true`/`false` literals using XOR (`ICONST_0`/`ICONST_1` → `(value ^ key) ^ key`)
-- **String obfuscation** – Encrypts string literals using XOR; decrypts at runtime via injected helper class. Runtime-derived keys for `static final` fields hinder simple decompilers. Strong against `strings`-tools, casual inspection, and basic decompilation. **Note:** Advanced decompilers (e.g. Recaf) can still reconstruct strings via constant propagation and symbolic execution – this cannot be fully prevented with bytecode obfuscation alone.
-- **Optional random keys** – `numberKeyRandom`, `arrayKeyRandom`, `booleanKeyRandom`, `stringKeyRandom` for different XOR keys per build
+- **String obfuscation** – Encrypts string literals using XOR; **decryption inlined at each use site** (no central decoder class). No single method to hook and dump all strings. Runtime-derived keys for `static final` fields. Strong against `strings`-tools and casual inspection. **Note:** Determined reversers can still trace decryption logic – obfuscation raises the bar, not unbreakable.
+- **Optional random keys** – `numberKeyRandom`, `arrayKeyRandom`, `booleanKeyRandom`, `stringKeyRandom` for different keys/patterns per build
 - **Debug info stripping** – Removes source file names, line number table, and local variable table. Decompilers show `var0`, `var1`, etc., and lose source mappings. Configurable via `debugInfoStrippingEnabled`.
 
 ### Configuration
@@ -52,7 +52,7 @@
 - **Loop transformation** – Modify loop structure to obscure intent
 
 ### String Obfuscation
-- ~~**String encryption**~~ ✓ (XOR-based, runtime decoder)
+- ~~**String encryption**~~ ✓ (XOR-based, inline decrypt at each use site; no central decoder)
 - **String splitting** – Split strings across multiple concatenations
 - **Encoding** – Base64, XOR, custom encodings
 - **Reflection hiding** – Obfuscate strings used in reflection

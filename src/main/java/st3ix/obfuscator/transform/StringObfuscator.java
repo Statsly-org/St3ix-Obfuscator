@@ -12,14 +12,17 @@ import java.util.Random;
 
 /**
  * Obfuscates string literals in bytecode using XOR encryption.
- * Replaces LDC "string" with a call to the decoder with encrypted byte array.
+ * Replaces LDC "string" with inline decryption bytecode at each call site.
+ * No central decoder class – no single point to hook and dump all strings.
  */
 public final class StringObfuscator {
 
-    /** Internal name of the decoder class (package o, class a). */
-    public static final String DECODER_CLASS = "o/a";
-    public static final String DECODER_METHOD = "d";
-    public static final String DECODER_DESCRIPTOR = "([BI)Ljava/lang/String;";
+    /** Local variable indices for inline decrypt (high to avoid clashes with method params). */
+    private static final int LOCAL_ENC = 100;
+    private static final int LOCAL_KEY = 101;
+    private static final int LOCAL_OUT = 102;
+    private static final int LOCAL_I = 103;
+    private static final int LOCAL_BYTE = 104;
 
     private static final int DEFAULT_KEY = 0x7B3C9E2F;
 
@@ -67,71 +70,6 @@ public final class StringObfuscator {
         ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
         reader.accept(new StringObfuscatorClassVisitor(writer, key), ClassReader.EXPAND_FRAMES);
         return writer.toByteArray();
-    }
-
-    /**
-     * Generates the decoder helper class bytecode. Must be added to the output JAR when string obfuscation is used.
-     */
-    public static byte[] generateDecoderClass() {
-        org.objectweb.asm.ClassWriter cw = new org.objectweb.asm.ClassWriter(org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-            DECODER_CLASS, null, "java/lang/Object", null);
-
-        org.objectweb.asm.MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, DECODER_METHOD, DECODER_DESCRIPTOR, null, null);
-        mv.visitCode();
-        // byte[] b = param0, int k = param1
-        // byte[] out = new byte[b.length]
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitInsn(Opcodes.ARRAYLENGTH);
-        mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE);
-        mv.visitVarInsn(Opcodes.ASTORE, 2);
-        // for (int i = 0; i < b.length; i++) out[i] = (byte)(b[i] ^ ((k+i) & 0xFF))
-        mv.visitInsn(Opcodes.ICONST_0);
-        mv.visitVarInsn(Opcodes.ISTORE, 3);  // i
-        org.objectweb.asm.Label loopStart = new org.objectweb.asm.Label();
-        org.objectweb.asm.Label loopEnd = new org.objectweb.asm.Label();
-        mv.visitLabel(loopStart);
-        mv.visitVarInsn(Opcodes.ILOAD, 3);
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitInsn(Opcodes.ARRAYLENGTH);
-        mv.visitJumpInsn(Opcodes.IF_ICMPGE, loopEnd);
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitVarInsn(Opcodes.ILOAD, 3);
-        mv.visitInsn(Opcodes.BALOAD);
-        mv.visitVarInsn(Opcodes.ILOAD, 1);
-        mv.visitVarInsn(Opcodes.ILOAD, 3);
-        mv.visitInsn(Opcodes.IADD);
-        mv.visitIntInsn(Opcodes.SIPUSH, 255);
-        mv.visitInsn(Opcodes.IAND);
-        mv.visitInsn(Opcodes.IXOR);
-        mv.visitInsn(Opcodes.I2B);
-        mv.visitVarInsn(Opcodes.ISTORE, 4);
-        mv.visitVarInsn(Opcodes.ALOAD, 2);
-        mv.visitVarInsn(Opcodes.ILOAD, 3);
-        mv.visitVarInsn(Opcodes.ILOAD, 4);
-        mv.visitInsn(Opcodes.BASTORE);
-        mv.visitIincInsn(3, 1);
-        mv.visitJumpInsn(Opcodes.GOTO, loopStart);
-        mv.visitLabel(loopEnd);
-        mv.visitTypeInsn(Opcodes.NEW, "java/lang/String");
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitVarInsn(Opcodes.ALOAD, 2);
-        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/nio/charset/StandardCharsets", "UTF_8", "Ljava/nio/charset/Charset;");
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>", "([BLjava/nio/charset/Charset;)V", false);
-        mv.visitInsn(Opcodes.ARETURN);
-        mv.visitMaxs(0, 0);  // COMPUTE_FRAMES computes these
-        mv.visitEnd();
-
-        cw.visitEnd();
-        return cw.toByteArray();
     }
 
     private static final class StringObfuscatorClassVisitor extends ClassVisitor {
@@ -190,7 +128,49 @@ public final class StringObfuscator {
             } else {
                 super.visitLdcInsn(key);
             }
-            super.visitMethodInsn(Opcodes.INVOKESTATIC, DECODER_CLASS, DECODER_METHOD, DECODER_DESCRIPTOR, false);
+            emitInlineDecrypt();
+        }
+
+        /** Inline XOR decrypt: stack [byte[] encrypted, int key] -> stack [String]. No central decoder. */
+        private void emitInlineDecrypt() {
+            org.objectweb.asm.Label loopStart = new org.objectweb.asm.Label();
+            org.objectweb.asm.Label loopEnd = new org.objectweb.asm.Label();
+            super.visitVarInsn(Opcodes.ASTORE, LOCAL_ENC);
+            super.visitVarInsn(Opcodes.ISTORE, LOCAL_KEY);
+            super.visitVarInsn(Opcodes.ALOAD, LOCAL_ENC);
+            super.visitInsn(Opcodes.ARRAYLENGTH);
+            super.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE);
+            super.visitVarInsn(Opcodes.ASTORE, LOCAL_OUT);
+            super.visitInsn(Opcodes.ICONST_0);
+            super.visitVarInsn(Opcodes.ISTORE, LOCAL_I);
+            super.visitLabel(loopStart);
+            super.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+            super.visitVarInsn(Opcodes.ALOAD, LOCAL_ENC);
+            super.visitInsn(Opcodes.ARRAYLENGTH);
+            super.visitJumpInsn(Opcodes.IF_ICMPGE, loopEnd);
+            super.visitVarInsn(Opcodes.ALOAD, LOCAL_ENC);
+            super.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+            super.visitInsn(Opcodes.BALOAD);
+            super.visitVarInsn(Opcodes.ILOAD, LOCAL_KEY);
+            super.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+            super.visitInsn(Opcodes.IADD);
+            super.visitIntInsn(Opcodes.SIPUSH, 255);
+            super.visitInsn(Opcodes.IAND);
+            super.visitInsn(Opcodes.IXOR);
+            super.visitInsn(Opcodes.I2B);
+            super.visitVarInsn(Opcodes.ISTORE, LOCAL_BYTE);
+            super.visitVarInsn(Opcodes.ALOAD, LOCAL_OUT);
+            super.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+            super.visitVarInsn(Opcodes.ILOAD, LOCAL_BYTE);
+            super.visitInsn(Opcodes.BASTORE);
+            super.visitIincInsn(LOCAL_I, 1);
+            super.visitJumpInsn(Opcodes.GOTO, loopStart);
+            super.visitLabel(loopEnd);
+            super.visitTypeInsn(Opcodes.NEW, "java/lang/String");
+            super.visitInsn(Opcodes.DUP);
+            super.visitVarInsn(Opcodes.ALOAD, LOCAL_OUT);
+            super.visitFieldInsn(Opcodes.GETSTATIC, "java/nio/charset/StandardCharsets", "UTF_8", "Ljava/nio/charset/Charset;");
+            super.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>", "([BLjava/nio/charset/Charset;)V", false);
         }
 
         /** Emits: key ^ thisClass.getName().hashCode() - prevents static evaluation by decompilers */
