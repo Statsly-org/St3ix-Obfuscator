@@ -11,6 +11,8 @@ import st3ix.obfuscator.transform.BooleanObfuscator;
 import st3ix.obfuscator.transform.ClassMapping;
 import st3ix.obfuscator.transform.ClassRenamer;
 import st3ix.obfuscator.transform.DebugInfoStripper;
+import st3ix.obfuscator.transform.MethodMapping;
+import st3ix.obfuscator.transform.MethodRenamer;
 import st3ix.obfuscator.transform.NumberObfuscator;
 import st3ix.obfuscator.transform.StringObfuscator;
 
@@ -37,14 +39,29 @@ public final class ObfuscationPipeline {
         if (!config.classRenamingEnabled()) {
             Logger.info("Class renaming disabled by config.");
             List<ClassEntry> classesToWrite = contents.classes();
-            boolean hasTransforms = config.numberObfuscationEnabled() || config.arrayObfuscationEnabled()
-                || config.booleanObfuscationEnabled() || config.stringObfuscationEnabled()
-                || config.debugInfoStrippingEnabled();
+            boolean hasTransforms = config.methodRenamingEnabled() || config.numberObfuscationEnabled()
+                || config.arrayObfuscationEnabled() || config.booleanObfuscationEnabled()
+                || config.stringObfuscationEnabled() || config.debugInfoStrippingEnabled();
             if (hasTransforms) {
                 int stepNum = 1;
-                int totalSteps = (config.numberObfuscationEnabled() ? 1 : 0) + (config.arrayObfuscationEnabled() ? 1 : 0)
-                    + (config.booleanObfuscationEnabled() ? 1 : 0) + (config.stringObfuscationEnabled() ? 1 : 0)
-                    + (config.debugInfoStrippingEnabled() ? 1 : 0) + 1;
+                int totalSteps = (config.methodRenamingEnabled() ? 1 : 0) + (config.numberObfuscationEnabled() ? 1 : 0)
+                    + (config.arrayObfuscationEnabled() ? 1 : 0) + (config.booleanObfuscationEnabled() ? 1 : 0)
+                    + (config.stringObfuscationEnabled() ? 1 : 0) + (config.debugInfoStrippingEnabled() ? 1 : 0) + 1;
+                if (config.methodRenamingEnabled()) {
+                    Logger.step("Step %d/%d: Method renaming", stepNum++, totalSteps);
+                    MethodMapping methodMapping = new MethodMapping(config.methodNamesRandom(), config.methodNameLength(),
+                        config.methodNamesHomoglyph(), config.methodNamesInvisibleChars());
+                    methodMapping.addExcludes(config.excludeClasses());
+                    methodMapping.buildFrom(contents.classes());
+                    for (var e : methodMapping.getRenameEntries()) {
+                        Logger.info("  Method renamed: %s.%s -> %s", e.className(), e.oldName(), e.newName());
+                    }
+                    MethodRenamer methodRenamer = new MethodRenamer(methodMapping);
+                    classesToWrite = contents.classes().stream()
+                        .map(ce -> new ClassEntry(ce.path(), ce.internalName(), methodRenamer.transform(ce.bytes())))
+                        .toList();
+                    Logger.success("Method renaming applied (%d method(s))", methodMapping.getRenameEntries().size());
+                }
                 if (config.numberObfuscationEnabled()) {
                     Logger.step("Step %d/%d: Number obfuscation", stepNum++, totalSteps);
                     NumberObfuscator no = config.numberKeyRandom() ? NumberObfuscator.withRandomKey() : new NumberObfuscator();
@@ -115,14 +132,30 @@ public final class ObfuscationPipeline {
             mapping.map(name);
         }
 
+        boolean methodObfEnabled = config.methodRenamingEnabled();
         boolean numberObfEnabled = config.numberObfuscationEnabled();
         boolean arrayObfEnabled = config.arrayObfuscationEnabled();
         boolean booleanObfEnabled = config.booleanObfuscationEnabled();
         boolean stringObfEnabled = config.stringObfuscationEnabled();
         boolean debugInfoStrippingEnabled = config.debugInfoStrippingEnabled();
-        int totalSteps = 2 + (numberObfEnabled ? 1 : 0) + (arrayObfEnabled ? 1 : 0) + (booleanObfEnabled ? 1 : 0)
-            + (stringObfEnabled ? 1 : 0) + (debugInfoStrippingEnabled ? 1 : 0);
+        int totalSteps = 2 + (methodObfEnabled ? 1 : 0) + (numberObfEnabled ? 1 : 0) + (arrayObfEnabled ? 1 : 0)
+            + (booleanObfEnabled ? 1 : 0) + (stringObfEnabled ? 1 : 0) + (debugInfoStrippingEnabled ? 1 : 0);
         int stepNum = 1;
+
+        MethodMapping methodMapping = null;
+        MethodRenamer methodRenamer = null;
+        if (methodObfEnabled) {
+            Logger.step("Step %d/%d: Method renaming", stepNum++, totalSteps);
+            methodMapping = new MethodMapping(config.methodNamesRandom(), config.methodNameLength(),
+                config.methodNamesHomoglyph(), config.methodNamesInvisibleChars());
+            methodMapping.addExcludes(config.excludeClasses());
+            methodMapping.buildFrom(contents.classes());
+            for (var e : methodMapping.getRenameEntries()) {
+                Logger.info("  Method renamed: %s.%s -> %s", e.className(), e.oldName(), e.newName());
+            }
+            methodRenamer = new MethodRenamer(methodMapping);
+            Logger.success("Method renaming applied (%d method(s))", methodMapping.getRenameEntries().size());
+        }
 
         Logger.step("Step %d/%d: Class renaming", stepNum++, totalSteps);
         ClassRenamer renamer = new ClassRenamer(mapping);
@@ -147,7 +180,11 @@ public final class ObfuscationPipeline {
                 Logger.info("  Class renamed: %s -> %s", ce.internalName().replace('/', '.'), newInternal.replace('/', '.'));
                 renamedCount++;
             }
-            byte[] bytes = renamer.transform(ce.bytes());
+            byte[] bytes = ce.bytes();
+            if (methodObfEnabled) {
+                bytes = methodRenamer.transform(bytes);
+            }
+            bytes = renamer.transform(bytes);
             if (numberObfEnabled) {
                 bytes = numberObfuscator.transform(bytes);
             }
