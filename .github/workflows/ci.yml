@@ -27,5 +27,6 @@ jobs:
 
       - name: Verify output
         run: |
-          test -f build/dist/st3ix-obfuscator.jar
+          test $(find build/dist -maxdepth 1 -name 'st3ix-obfuscator-v*.jar' 2>/dev/null | wc -l) -eq 1
           test -f build/dist/config.yml.example
+          test -f build/dist/run.bat
