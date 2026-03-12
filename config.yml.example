@@ -9,7 +9,7 @@ methodRenamingEnabled: true
 # Enable or disable field renaming (excludes serialVersionUID, enum constants)
 fieldRenamingEnabled: true
 
-# Obfuscate numeric constants (int, long, float, double) using XOR
+# Obfuscate numeric constants (int = math expressions; long/float/double = XOR)
 numberObfuscationEnabled: true
 
 # Obfuscate array dimensions (new Type[n] -> n hidden with XOR)
@@ -42,8 +42,8 @@ fieldNameLength: 4         # minimum length of field names (1-32)
 fieldNamesHomoglyph: false # use lookalike chars for field names
 fieldNamesInvisibleChars: false  # inject zero-width chars in field names
 
-# Obfuscation keys (XOR)
-numberKeyRandom: false   # true = random key per build, false = fixed key
+# Obfuscation keys / randomization
+numberKeyRandom: false   # true = random expression pattern per value, false = deterministic
 arrayKeyRandom: false    # true = random key per build, false = fixed key
 booleanKeyRandom: false  # true = random key per build, false = fixed key
 stringKeyRandom: false   # true = random key per build, false = fixed key
