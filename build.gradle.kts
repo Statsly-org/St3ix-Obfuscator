@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "st3ix"
-version = "1.0.1"
+version = "1.0.2"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -52,10 +52,11 @@ tasks.register<Jar>("fatJar") {
 
 tasks.register<Copy>("dist") {
     dependsOn("fatJar")
+    val releaseVersion = project.findProperty("releaseVersion")?.toString() ?: version.toString()
     from(tasks.named<Jar>("fatJar")) {
-        rename { "st3ix-obfuscator.jar" }
+        rename { "st3ix-obfuscator-v${releaseVersion}.jar" }
     }
-    from("scripts")
+    from("scripts/run.bat")
     from("config.yml.example")
     from("Images")
     into(layout.buildDirectory.dir("dist"))

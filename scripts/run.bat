@@ -1,5 +1,3 @@
-
-
 @echo off
 setlocal
 cd /d "%~dp0"
@@ -22,11 +20,10 @@ if errorlevel 1 (
 )
 
 :run
-set "JAR_PATH=%~dp0st3ix-obfuscator.jar"
-if not exist "%JAR_PATH%" set "JAR_PATH=%~dp0..\build\dist\st3ix-obfuscator.jar"
-if not exist "%JAR_PATH%" (
-    echo ERROR: JAR not found.
-    echo Run "gradlew dist" from project root first.
+set "JAR_PATH="
+for %%F in ("%~dp0st3ix-obfuscator-v*.jar") do set "JAR_PATH=%%~F"
+if not defined JAR_PATH (
+    echo ERROR: JAR st3ix-obfuscator-v*.jar not found in this folder.
     pause
     exit /b 1
 )

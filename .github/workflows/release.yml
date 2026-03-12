@@ -1,0 +1,49 @@
+# Build and create draft release when a version tag is pushed (e.g. v1.0.2)
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build distribution
+        run: ./gradlew dist -PreleaseVersion=${{ steps.version.outputs.VERSION }} --no-daemon
+
+      - name: Create release ZIP
+        run: |
+          cd build/dist && zip -r ../../st3ix-obfuscator-${{ steps.version.outputs.VERSION }}.zip . && cd ../..
+          mv st3ix-obfuscator-${{ steps.version.outputs.VERSION }}.zip build/
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          name: v${{ steps.version.outputs.VERSION }}
+          files: |
+            build/st3ix-obfuscator-${{ steps.version.outputs.VERSION }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
