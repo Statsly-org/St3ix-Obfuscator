@@ -6,7 +6,7 @@
 - **Class renaming** – Renames classes to short or random identifiers (e.g. `a`, `b`, `c` or `xk9m2p`)
 - **Configurable name length** – Minimum length 1–32 characters
 - **Random vs sequential** – Optional random names per build for stronger obfuscation
-- **Exclude patterns** – Skip classes/packages from renaming (config + built-in for JDK, Bukkit, Minecraft, etc.)
+- **Exclude patterns** – Skip classes/packages from renaming. Use `*` to exclude all classes; prefix matches (e.g. `com.example` excludes `com.example.*`). Built-in: java.*, javax.*, Bukkit, Minecraft, etc.
 - **Package flattening** – Inner classes get short names; outer package hierarchy preserved
 - **Homoglyph obfuscation** – Use Unicode lookalikes (e.g. Cyrillic а instead of Latin a). Names appear familiar but copy-paste and search fail. Sequential: fixed mapping; random: varies per char.
 - **Invisible character injection** – Zero-width chars (U+200B, etc.) in names. Safe for JVM; harder to detect and remove.
