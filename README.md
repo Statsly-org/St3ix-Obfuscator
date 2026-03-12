@@ -24,7 +24,7 @@ java -jar build/dist/st3ix-obfuscator.jar -i myapp.jar -o myapp-obfuscated.jar
 java -jar build/dist/Obfuscate/myapp-obfuscated.jar
 ```
 
-**Windows:** Use `gradlew.bat` for building. For the GUI, run `run-gui.bat` from `build/dist/` or double-click the JAR.
+**Windows:** Use `gradlew.bat` for building. For the GUI, run `run.bat` from `build/dist/` or double-click the JAR.
 
 Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zum Starten, Config-Beispiel, Images.
 
@@ -37,11 +37,12 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 - **Number obfuscation** – Hides `int` via math expressions (`123` → `(50*3)-27`); `long`/`float`/`double` via XOR
 - **Array obfuscation** – Hides array dimensions
 - **Boolean obfuscation** – Hides `true`/`false` literals
-- **String obfuscation** – Encrypts string literals (XOR); decryption inlined at each use (no central decoder)
+- **String obfuscation** – Encrypts string literals (XOR); inline decrypt at each use; key per class and per string (no central decoder, no dump point)
 - **Debug info stripping** – Removes source names, line numbers, local variable names
 - **Local variable renaming** *(planned)* – Obfuscate local variable names when debug kept
-- **Random options** – Optional random keys and class/method names per build
+- **Random options** – Optional random keys and class/method/field names per build
 - **Exclude patterns** – Skip JDK, Bukkit, Minecraft, and custom packages
+- **GUI** – Graphical interface for obfuscation (`run.bat`)
 - **YAML config** – `config.yml` next to the JAR
 
 See [Features.md](Features.md) for the full list of current and planned features.
@@ -65,6 +66,8 @@ Copy `config.yml.example` to `config.yml` and place it next to `st3ix-obfuscator
 
 ```yaml
 classRenamingEnabled: true
+methodRenamingEnabled: true
+fieldRenamingEnabled: true
 numberObfuscationEnabled: true
 arrayObfuscationEnabled: true
 booleanObfuscationEnabled: true
@@ -119,23 +122,23 @@ package example;
 
 public final class Main {
     public static void main(String[] args) {
-        System.out.println("Example project running.");
-        DemoService service = new DemoService();
-        service.run();
+        System.out.println("License validation active.");
+        LicenseValidator validator = new LicenseValidator();
+        validator.validate();
     }
 }
 
-// example/DemoService.java
-public final class DemoService {
-    private static final String SECRET_KEY = "my-secret-key-12345";
-    private int counter;
+// example/LicenseValidator.java
+public final class LicenseValidator {
+    private static final String API_KEY = "sk-live-a7f3b9c2e1d4";
+    private int validationCount;
     
-    public void run() {
-        counter++;
-        int port = 25565;
-        int seed = 12345;
-        boolean flag = true;
-        System.out.println("port=" + port + ", seed=" + seed);
+    public void validate() {
+        validationCount++;
+        int port = 443;           // HTTPS
+        int maxRetries = 3;
+        boolean strictMode = true;
+        System.out.println("port=" + port + ", retries=" + maxRetries);
     }
 }
 ```
@@ -148,7 +151,6 @@ public final class DemoService {
 
 public final class b {
     public static void main(String[] args) {
-        // Inline: byte[] + XOR loop + new String(...) – no o.a.d()
         byte[] enc = new byte[]{...};
         byte[] out = new byte[enc.length];
         for (int i = 0; i < enc.length; i++)
@@ -165,29 +167,33 @@ public final class ь {
     
     public void a() {
         this.b++;
-        int var0 = 25621 - 56;      // 25565 via expression
-        int var1 = 37 * 333 + 24;   // 12345 via expression
+        int var0 = 431 + 12;      // 443 via expression
+        int var1 = 2 * 2 - 1;    // 3 via expression
         boolean var2 = 0x... ^ 0x...;  // boolean XOR
-        System.out.println("port=" + var0 + ", seed=" + var1);
+        System.out.println("port=" + var0 + ", retries=" + var1);
     }
 }
 ```
 
 | Transform         | Effect                                                                 |
 |-------------------|-----------------------------------------------------------------------|
-| Class renaming    | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`)  |
-| Method renaming   | `run()` → `a()` (excludes main, constructors, native)                 |
-| Field renaming    | `SECRET_KEY` → `f`, `counter` → `g`                                  |
+| Class renaming    | `Main` → `b`, `LicenseValidator` → `ь` (short names; homoglyph: `а`, `ь`) |
+| Method renaming   | `validate()` → `a()` (excludes main, constructors, native)            |
+| Field renaming    | `API_KEY` → `a`, `validationCount` → `b`                              |
 | Homoglyph         | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
 | Invisible chars   | Zero-width chars in names – appear normal but differ                  |
-| Number obfuscation  | `25565` → `25621-56`, `12345` → `37*333+24` (math expressions)     |
+| Number obfuscation  | `443` → `431+12`, `3` → `2*2-1` (math expressions)                 |
 | Boolean obfuscation | `true` → `(value ^ key) ^ key`                                    |
-| String obfuscation  | Inline XOR decrypt at each use; no central decoder → no dump point |
+| String obfuscation  | Inline XOR decrypt at each use; key per class and per string; no central decoder → no dump point |
 | Debug stripping   | Local vars become `var0`, `var1`; line numbers removed                |
 
 ### Strength
 
-Obfuscation raises the bar for casual and automated reverse engineering. Numbers are hidden as expressions instead of trivial XOR; strings are decrypted inline with no single hook point. Realistic caveats: determined reversers can still analyze the code; obfuscation is a deterrent, not unbreakable protection.
+Obfuscation raises the bar for casual and automated reverse engineering. Numbers are hidden as math expressions at compile time; decompilers show the expression, not the literal. Strings use **runtime-computed keys** (`key ^ class.hashCode() ^ index` per string), decrypted inline at each use site—no central decoder, no single breakpoint to dump all strings.
+
+We chose XOR over AES for string encryption: AES would be overkill for typical JAR obfuscation and adds complexity (IV handling, block size). XOR with per-class/per-string keys is lightweight and effective against `strings`-tools and casual inspection. **Issues and PRs are open**—if you want AES or stronger encryption, contributions are welcome.
+
+Realistic caveats: determined reversers can still trace decryption logic; obfuscation is a deterrent, not unbreakable protection.
 
 ## Documentation
 

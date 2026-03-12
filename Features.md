@@ -4,11 +4,13 @@
 
 ### Name Obfuscation
 - **Class renaming** – Renames classes to short or random identifiers (e.g. `a`, `b`, `c` or `xk9m2p`)
-- **Configurable name length** – Minimum length 1–32 characters
+- **Method renaming** – Obfuscate method names; handles override chains; excludes main, constructors, native, enum methods; optional homoglyph/invisible chars
+- **Field renaming** – Obfuscate field names; excludes serialVersionUID and enum constants; optional homoglyph/invisible chars
+- **Configurable name length** – Minimum length 1–32 characters (class, method, field)
 - **Random vs sequential** – Optional random names per build for stronger obfuscation
 - **Exclude patterns** – Skip classes/packages from renaming. Use `*` to exclude all classes; prefix matches (e.g. `com.example` excludes `com.example.*`). Built-in: java.*, javax.*, Bukkit, Minecraft, etc.
 - **Package flattening** – Inner classes get short names; outer package hierarchy preserved
-- **Homoglyph obfuscation** – Use Unicode lookalikes (e.g. Cyrillic а instead of Latin a). Names appear familiar but copy-paste and search fail. Sequential: fixed mapping; random: varies per char.
+- **Homoglyph obfuscation** – Use Unicode lookalikes (e.g. Cyrillic а instead of Latin a) for class/method/field names. Sequential: fixed mapping; random: varies per char.
 - **Invisible character injection** – Zero-width chars (U+200B, etc.) in names. Safe for JVM; harder to detect and remove.
 
 ### Data Obfuscation
@@ -21,10 +23,11 @@
 
 ### Configuration
 - **YAML config** – `config.yml` next to JAR
-- **Per-feature toggles** – Enable/disable class renaming, number, array, boolean, and string obfuscation
-- **Random options** – Toggle randomness for class names and obfuscation keys
+- **Per-feature toggles** – Enable/disable class, method, field renaming; number, array, boolean, and string obfuscation; debug stripping
+- **Random options** – Toggle randomness for class/method/field names and obfuscation keys
 
 ### Output & CLI
+- **GUI** – Graphical interface (`run-gui.bat`); input/output, config path, per-feature checkboxes
 - **CLI** – `-i` input, `-o` output filename
 - **Obfuscate folder** – Output written to `Obfuscate/` in the obfuscator JAR directory
 - **Overwrite** – Replaces existing output file if present
@@ -40,8 +43,6 @@
 ## Planned Features
 
 ### Name Obfuscation
-- **Method renaming** – Rename methods (except overrides, main, constructors)
-- **Field renaming** – Rename fields; respect reflection and serialization
 - **Overload induction** – Multiple methods with same name, different signatures
 
 ### Control Flow Obfuscation
