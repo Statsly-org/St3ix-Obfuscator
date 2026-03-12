@@ -6,6 +6,9 @@ classRenamingEnabled: true
 # Enable or disable method renaming (excludes constructors, main, native, enum methods)
 methodRenamingEnabled: true
 
+# Enable or disable field renaming (excludes serialVersionUID, enum constants)
+fieldRenamingEnabled: true
+
 # Obfuscate numeric constants (int, long, float, double) using XOR
 numberObfuscationEnabled: true
 
@@ -32,6 +35,12 @@ methodNamesRandom: false   # true = random method names per build, false = seque
 methodNameLength: 4        # minimum length of method names (1-32)
 methodNamesHomoglyph: false   # use lookalike chars for method names
 methodNamesInvisibleChars: false  # inject zero-width chars in method names
+
+# Field name generation
+fieldNamesRandom: false    # true = random field names per build
+fieldNameLength: 4         # minimum length of field names (1-32)
+fieldNamesHomoglyph: false # use lookalike chars for field names
+fieldNamesInvisibleChars: false  # inject zero-width chars in field names
 
 # Obfuscation keys (XOR)
 numberKeyRandom: false   # true = random key per build, false = fixed key
