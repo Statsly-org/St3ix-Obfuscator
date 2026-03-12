@@ -21,25 +21,36 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * GUI for the St3ix Obfuscator. Select JAR, configure options, run obfuscation.
+ * GUI for the St3ix Obfuscator. Step-based sidebar with Input, Obfuscation, Advanced, Run.
  */
 public final class ObfuscatorGui {
 
     private static final String OBFUSCATE_FOLDER = "Obfuscate";
 
-    private static final Color BG_MAIN = new Color(0xF5F5F7);
-    private static final Color BG_PANEL = Color.WHITE;
-    private static final Color BORDER = new Color(0xE0E0E0);
-    private static final Color ACCENT = new Color(0x5C6BC0);
+    private static final Color BG_MAIN = new Color(0xF0F2F5);
+    private static final Color BG_PANEL = new Color(0xFAFBFC);
+    private static final Color BORDER = new Color(0xD1D5DB);
+    private static final Color ACCENT = new Color(0x238636);
+    private static final Color SIDEBAR_BG = new Color(0x2D333B);
+    private static final Color SIDEBAR_TEXT = new Color(0xB1BAC4);
+    private static final Color SIDEBAR_ACTIVE_BG = new Color(0x21262D);
+    private static final Color SIDEBAR_ACTIVE_TEXT = Color.WHITE;
+    private static final Color SIDEBAR_HOVER = new Color(0x58A6FF);
+    private static final Color SIDEBAR_ACCENT = new Color(0x58A6FF);
 
-    private static final String EXCLUDE_INFO = "java.*, javax.*, org.bukkit.*, net.minecraft.* etc. are always excluded.";
+    private static final String EXCLUDE_INFO = "Use \"*\" to exclude all classes. Prefix: com.example excludes com.example.*. java.*, javax.*, etc. are always excluded.";
+
+    private static final String STEP_INPUT = "input";
+    private static final String STEP_OBFUSCATION = "obfuscation";
+    private static final String STEP_ADVANCED = "advanced";
+    private static final String STEP_RUN = "run";
 
     public static void show() {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("St3ix Obfuscator");
             frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-            frame.setMinimumSize(new Dimension(680, 700));
-            frame.setSize(780, 750);
+            frame.setMinimumSize(new Dimension(720, 700));
+            frame.setSize(820, 750);
             frame.setLocationRelativeTo(null);
             frame.getContentPane().setBackground(BG_MAIN);
 
@@ -47,79 +58,20 @@ public final class ObfuscatorGui {
             if (icon != null) {
                 frame.setIconImage(icon);
             }
+            final Image sidebarIcon = icon;
 
-            JPanel main = new JPanel(new BorderLayout(10, 10));
-            main.setBorder(new EmptyBorder(12, 12, 12, 12));
-            main.setBackground(BG_MAIN);
-
-            JPanel top = new JPanel(new BorderLayout(6, 6));
-            top.setBackground(BG_MAIN);
-
-            JPanel filePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 6));
-            filePanel.setBackground(BG_PANEL);
-            filePanel.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(8, 10, 8, 10)));
-            JTextField inputPath = new JTextField(28);
+            // Shared form fields (accessible across steps)
+            JTextField inputPath = new JTextField(22);
             inputPath.setEditable(false);
             inputPath.setMargin(new Insets(4, 6, 4, 6));
-            JButton browseInputBtn = new JButton("Browse...");
-            browseInputBtn.setFocusPainted(false);
-            browseInputBtn.addActionListener(e -> {
-                JFileChooser fc = new JFileChooser();
-                fc.setFileFilter(new FileNameExtensionFilter("JAR files (*.jar)", "jar"));
-                if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                    inputPath.setText(fc.getSelectedFile().getAbsolutePath());
-                }
-            });
-            filePanel.add(new JLabel("Input JAR:"));
-            filePanel.add(inputPath);
-            filePanel.add(browseInputBtn);
-            top.add(filePanel, BorderLayout.NORTH);
-
-            JPanel outputPanel = new JPanel(new GridLayout(2, 1, 6, 6));
-            outputPanel.setBackground(BG_PANEL);
-            outputPanel.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(8, 10, 8, 10)));
-
-            JPanel outputNameRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-            outputNameRow.setBackground(BG_PANEL);
-            JTextField outputName = new JTextField(25);
+            JTextField outputName = new JTextField(18);
             outputName.setMargin(new Insets(4, 6, 4, 6));
-            outputNameRow.add(new JLabel("Output name:"));
-            outputNameRow.add(outputName);
-
-            JPanel outputDirRow = new JPanel(new BorderLayout(6, 0));
-            outputDirRow.setBackground(BG_PANEL);
-            JTextField outputDir = new JTextField(50);
+            JTextField outputDir = new JTextField(32);
             outputDir.setEditable(true);
             outputDir.setMargin(new Insets(4, 6, 4, 6));
             Path defaultOutputDir = ConfigLoader.getJarDirectory().resolve(OBFUSCATE_FOLDER);
             outputDir.setText(defaultOutputDir.toAbsolutePath().toString());
-            JButton browseOutputBtn = new JButton("Browse...");
-            browseOutputBtn.setFocusPainted(false);
-            browseOutputBtn.addActionListener(e -> {
-                JFileChooser fc = new JFileChooser();
-                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                Path current = Path.of(outputDir.getText().trim());
-                if (Files.isDirectory(current)) {
-                    fc.setCurrentDirectory(current.toFile());
-                }
-                if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                    outputDir.setText(fc.getSelectedFile().getAbsolutePath());
-                }
-            });
-            outputDirRow.add(new JLabel("Output folder:"), BorderLayout.WEST);
-            outputDirRow.add(outputDir, BorderLayout.CENTER);
-            outputDirRow.add(browseOutputBtn, BorderLayout.EAST);
 
-            outputPanel.add(outputNameRow);
-            outputPanel.add(outputDirRow);
-            top.add(outputPanel, BorderLayout.CENTER);
-
-            JPanel center = new JPanel(new BorderLayout(6, 6));
-            center.setBackground(BG_MAIN);
-
-            JPanel configPanel = new JPanel(new GridLayout(0, 2, 6, 4));
-            configPanel.setBackground(BG_PANEL);
-            configPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Obfuscation options"));
             JCheckBox classRename = new JCheckBox("Class renaming", true);
             JCheckBox numberObf = new JCheckBox("Number obfuscation", true);
             JCheckBox arrayObf = new JCheckBox("Array obfuscation", true);
@@ -134,106 +86,12 @@ public final class ObfuscatorGui {
             JCheckBox booleanKeyRandom = new JCheckBox("Random boolean key", false);
             JCheckBox stringKeyRandom = new JCheckBox("Random string key", false);
             JSpinner classNameLength = new JSpinner(new SpinnerNumberModel(6, 1, 32, 1));
-            configPanel.add(classRename);
-            configPanel.add(numberObf);
-            configPanel.add(arrayObf);
-            configPanel.add(booleanObf);
-            configPanel.add(stringObf);
-            configPanel.add(debugInfoStrip);
-            configPanel.add(classNamesRandom);
-            configPanel.add(classNamesHomoglyph);
-            configPanel.add(classNamesInvisibleChars);
-            configPanel.add(numberKeyRandom);
-            configPanel.add(arrayKeyRandom);
-            configPanel.add(booleanKeyRandom);
-            configPanel.add(stringKeyRandom);
-            configPanel.add(new JLabel("Class name length:"));
-            configPanel.add(classNameLength);
-            center.add(configPanel, BorderLayout.NORTH);
-
-            JPanel advancedObfPanel = new JPanel(new BorderLayout(4, 4));
-            advancedObfPanel.setBackground(BG_PANEL);
-            advancedObfPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Advanced class name obfuscation"));
-            String homoglyphInfo = "<html><b>Homoglyphs & invisible characters</b> – Use Unicode lookalikes (e.g. Cyrillic а instead of Latin a) and zero-width chars. "
-                + "Names appear normal but copy-paste and search fail. Safe for JVM; increases reverse-engineering effort.</html>";
-            JLabel homoglyphInfoLabel = new JLabel(homoglyphInfo);
-            homoglyphInfoLabel.setFont(homoglyphInfoLabel.getFont().deriveFont(10f));
-            homoglyphInfoLabel.setForeground(new Color(0x555555));
-            homoglyphInfoLabel.setBorder(new EmptyBorder(4, 6, 8, 6));
-            advancedObfPanel.add(homoglyphInfoLabel, BorderLayout.NORTH);
-            JPanel excludePanel = new JPanel(new BorderLayout(4, 4));
-            excludePanel.setBackground(BG_PANEL);
-            excludePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Exclude classes (one per line)"));
-            JTextArea excludeArea = new JTextArea(3, 30);
+            classNameLength.setPreferredSize(new Dimension(60, 24));
+            JTextArea excludeArea = new JTextArea(4, 28);
             excludeArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
             excludeArea.setLineWrap(false);
             excludeArea.setMargin(new Insets(4, 6, 4, 6));
-            JScrollPane excludeScroll = new JScrollPane(excludeArea);
-            JLabel excludeInfo = new JLabel(EXCLUDE_INFO);
-            excludeInfo.setFont(excludeInfo.getFont().deriveFont(10f));
-            excludeInfo.setForeground(new Color(0x666666));
-            excludePanel.add(excludeScroll, BorderLayout.CENTER);
-            excludePanel.add(excludeInfo, BorderLayout.SOUTH);
-
-            JPanel centerContent = new JPanel();
-            centerContent.setLayout(new BoxLayout(centerContent, BoxLayout.Y_AXIS));
-            centerContent.setBackground(BG_MAIN);
-            centerContent.add(advancedObfPanel);
-            centerContent.add(excludePanel);
-            center.add(centerContent, BorderLayout.CENTER);
-
-            JPanel configRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
-            configRow.setBackground(BG_MAIN);
-            JButton loadConfigBtn = new JButton("Load config.yml (JAR dir)");
-            loadConfigBtn.setFocusPainted(false);
-            loadConfigBtn.addActionListener(ev -> {
-                var result = ConfigLoader.loadWithPath();
-                if (result.configPath() == null) {
-                    ToastNotification.show(frame, "No config.yml found next to JAR. Using defaults.", ToastNotification.Type.INFO);
-                    return;
-                }
-                applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
-                    classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
-                    stringKeyRandom, classNameLength, excludeArea, result.config());
-                ToastNotification.show(frame, "Config loaded.", ToastNotification.Type.SUCCESS);
-            });
-            JButton browseConfigBtn = new JButton("Browse config...");
-            browseConfigBtn.setFocusPainted(false);
-            browseConfigBtn.addActionListener(ev -> {
-                JFileChooser fc = new JFileChooser();
-                fc.setFileFilter(new FileNameExtensionFilter("YAML files (*.yml, *.yaml)", "yml", "yaml"));
-                if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                    try {
-                        var result = ConfigLoader.loadFrom(fc.getSelectedFile().toPath());
-                        applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
-                            classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
-                            stringKeyRandom, classNameLength, excludeArea, result.config());
-                        ToastNotification.show(frame, "Config loaded from " + result.configPath().getFileName(), ToastNotification.Type.SUCCESS);
-                    } catch (IOException ex) {
-                        ToastNotification.show(frame, "Config invalid: " + ex.getMessage(), ToastNotification.Type.ERROR);
-                    }
-                }
-            });
-            configRow.add(loadConfigBtn);
-            configRow.add(browseConfigBtn);
-
-            JPanel bottomCenter = new JPanel(new BorderLayout(4, 4));
-            bottomCenter.setBackground(BG_MAIN);
-            bottomCenter.add(configRow, BorderLayout.NORTH);
-            JButton obfuscateBtn = new JButton("Obfuscate");
-            obfuscateBtn.setFont(obfuscateBtn.getFont().deriveFont(Font.BOLD, 13f));
-            obfuscateBtn.setBackground(ACCENT);
-            obfuscateBtn.setForeground(Color.WHITE);
-            obfuscateBtn.setFocusPainted(false);
-            obfuscateBtn.setBorderPainted(true);
-            obfuscateBtn.setOpaque(true);
-            obfuscateBtn.setBorder(new EmptyBorder(8, 20, 8, 20));
-            obfuscateBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            bottomCenter.add(obfuscateBtn, BorderLayout.CENTER);
-            center.add(bottomCenter, BorderLayout.SOUTH);
-
-            main.add(top, BorderLayout.NORTH);
-            main.add(center, BorderLayout.CENTER);
+            excludeArea.setPreferredSize(new Dimension(300, 70));
 
             JTextPane outputPane = new JTextPane();
             outputPane.setEditable(false);
@@ -242,113 +100,522 @@ public final class ObfuscatorGui {
             outputPane.setForeground(new Color(0xD4D4D4));
             outputPane.setCaretColor(new Color(0xD4D4D4));
             outputPane.setMargin(new Insets(8, 10, 8, 10));
-            outputPane.setPreferredSize(new Dimension(0, 220));
-            JScrollPane outputScroll = new JScrollPane(outputPane);
-            outputScroll.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(0, 0, 0, 0)));
-            outputScroll.getViewport().setBackground(new Color(0x2D2D30));
-            main.add(outputScroll, BorderLayout.SOUTH);
+            outputPane.setPreferredSize(new Dimension(0, 160));
 
-            obfuscateBtn.addActionListener(e -> {
-                String pathStr = inputPath.getText().trim();
-                if (pathStr.isEmpty()) {
-                    ToastNotification.show(frame, "Please select an input JAR file.", ToastNotification.Type.WARN);
-                    return;
+            // Sidebar
+            JPanel sidebar = new JPanel(new BorderLayout(0, 0));
+            sidebar.setPreferredSize(new Dimension(210, 0));
+            sidebar.setBackground(SIDEBAR_BG);
+            sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0x30363D)));
+
+            JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 8));
+            headerPanel.setBackground(SIDEBAR_BG);
+            headerPanel.setBorder(new EmptyBorder(12, 12, 8, 12));
+            JLabel titleLabel = new JLabel("St3ix Obfuscator");
+            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 13f));
+            titleLabel.setForeground(SIDEBAR_TEXT);
+            if (sidebarIcon != null) {
+                Image scaled = sidebarIcon.getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+                headerPanel.add(new JLabel(new ImageIcon(scaled)));
+            }
+            headerPanel.add(titleLabel);
+            sidebar.add(headerPanel, BorderLayout.NORTH);
+
+            JPanel stepsPanel = new JPanel(new GridLayout(4, 1, 0, 0));
+            stepsPanel.setBackground(SIDEBAR_BG);
+            stepsPanel.setBorder(new EmptyBorder(4, 0, 12, 0));
+
+            JLabel step1Label = new JLabel("  1. Input & Output");
+            JLabel step2Label = new JLabel("  2. Obfuscation");
+            JLabel step3Label = new JLabel("  3. Advanced");
+            JLabel step4Label = new JLabel("  4. Run");
+            for (JLabel l : List.of(step1Label, step2Label, step3Label, step4Label)) {
+                l.setFont(l.getFont().deriveFont(Font.PLAIN, 12f));
+                l.setForeground(SIDEBAR_TEXT);
+                l.setBorder(new EmptyBorder(8, 12, 8, 12));
+                l.setBackground(SIDEBAR_BG);
+                l.setOpaque(true);
+                l.setAlignmentY(Component.CENTER_ALIGNMENT);
+                stepsPanel.add(l);
+            }
+            sidebar.add(stepsPanel, BorderLayout.CENTER);
+
+            // Content with CardLayout
+            JPanel content = new JPanel(new CardLayout(8, 8));
+            content.setBackground(BG_MAIN);
+
+            // Step 1: Input & Output
+            JPanel step1 = buildStep1Panel(frame, inputPath, outputName, outputDir);
+            content.add(step1, STEP_INPUT);
+
+            // Step 2: Obfuscation
+            JPanel step2 = buildStep2Panel(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNameLength);
+            content.add(step2, STEP_OBFUSCATION);
+
+            // Step 3: Advanced
+            JPanel step3 = buildStep3Panel(classNamesRandom, classNamesHomoglyph, classNamesInvisibleChars,
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeArea,
+                frame, classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNameLength);
+            content.add(step3, STEP_ADVANCED);
+
+            // Step 4: Run
+            JPanel step4 = buildStep4Panel(inputPath, outputName, outputDir, excludeArea,
+                classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip,
+                classNamesRandom, classNamesHomoglyph, classNamesInvisibleChars,
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, classNameLength,
+                frame, outputPane);
+            content.add(step4, STEP_RUN);
+
+            CardLayout cards = (CardLayout) content.getLayout();
+
+            JLabel[] stepLabels = {step1Label, step2Label, step3Label, step4Label};
+            String[] stepKeys = {STEP_INPUT, STEP_OBFUSCATION, STEP_ADVANCED, STEP_RUN};
+
+            Runnable updateHighlight = () -> {
+                String active = getCurrentStep(content);
+                for (int i = 0; i < stepLabels.length; i++) {
+                    JLabel l = stepLabels[i];
+                    boolean isActive = stepKeys[i].equals(active);
+                    l.setForeground(isActive ? Color.WHITE : SIDEBAR_TEXT);
+                    l.setBackground(isActive ? SIDEBAR_ACTIVE_BG : SIDEBAR_BG);
+                    l.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, isActive ? 4 : 0, 0, 0, ACCENT),
+                        new EmptyBorder(8, isActive ? 8 : 12, 8, 12)));
                 }
-                Path input = Path.of(pathStr);
-                if (!Files.isRegularFile(input)) {
-                    ToastNotification.show(frame, "Input file does not exist.", ToastNotification.Type.ERROR);
-                    return;
-                }
+            };
 
-                String outNameStr = outputName.getText().trim();
-                if (outNameStr.isEmpty()) {
-                    outNameStr = input.getFileName().toString().replaceAll("\\.jar$", "") + "-obfuscated.jar";
-                } else if (!outNameStr.endsWith(".jar")) {
-                    outNameStr += ".jar";
-                }
-                Path outputDirPath = Path.of(outputDir.getText().trim());
-                if (!Files.isDirectory(outputDirPath)) {
-                    try {
-                        Files.createDirectories(outputDirPath);
-                    } catch (IOException ex) {
-                        ToastNotification.show(frame, "Cannot create output folder: " + ex.getMessage(), ToastNotification.Type.ERROR);
-                        return;
-                    }
-                }
-                Path outputPath = outputDirPath.resolve(outNameStr);
-
-                List<String> excludeList = Arrays.stream(excludeArea.getText().split("\\n"))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
-
-                obfuscateBtn.setEnabled(false);
-                outputPane.setText("");
-
-                ObfuscatorConfig config = new ObfuscatorConfig(
-                    classRename.isSelected(),
-                    numberObf.isSelected(),
-                    arrayObf.isSelected(),
-                    booleanObf.isSelected(),
-                    stringObf.isSelected(),
-                    debugInfoStrip.isSelected(),
-                    classNamesRandom.isSelected(),
-                    (Integer) classNameLength.getValue(),
-                    classNamesHomoglyph.isSelected(),
-                    classNamesInvisibleChars.isSelected(),
-                    numberKeyRandom.isSelected(),
-                    arrayKeyRandom.isSelected(),
-                    booleanKeyRandom.isSelected(),
-                    stringKeyRandom.isSelected(),
-                    excludeList
-                );
-
-                SwingWorker<Void, String> worker = new SwingWorker<>() {
+            for (int i = 0; i < stepLabels.length; i++) {
+                JLabel lbl = stepLabels[i];
+                String key = stepKeys[i];
+                lbl.addMouseListener(new java.awt.event.MouseAdapter() {
                     @Override
-                    protected Void doInBackground() {
-                        Logger.setGuiOutput(line -> publish(line));
-                        try {
-                            if (Files.exists(outputPath)) {
-                                Files.delete(outputPath);
-                            }
-                            ObfuscationPipeline pipeline = new ObfuscationPipeline();
-                            pipeline.run(input, outputPath, config);
-                            publish("Done. Output: " + outputPath.toAbsolutePath());
-                            SwingUtilities.invokeLater(() -> ToastNotification.show(frame, "Obfuscation completed.", ToastNotification.Type.SUCCESS));
-                        } catch (IOException ex) {
-                            publish("ERROR: " + ex.getMessage());
-                            SwingUtilities.invokeLater(() -> ToastNotification.show(frame, "Failed: " + ex.getMessage(), ToastNotification.Type.ERROR));
-                        } finally {
-                            Logger.setGuiOutput(null);
+                    public void mouseClicked(java.awt.event.MouseEvent e) {
+                        cards.show(content, key);
+                        updateHighlight.run();
+                    }
+                    @Override
+                    public void mouseEntered(java.awt.event.MouseEvent e) {
+                        if (!key.equals(getCurrentStep(content))) {
+                            lbl.setForeground(SIDEBAR_HOVER);
                         }
-                        return null;
                     }
-
                     @Override
-                    protected void process(java.util.List<String> chunks) {
-                        for (String line : chunks) {
-                            appendColored(outputPane, line);
-                        }
+                    public void mouseExited(java.awt.event.MouseEvent e) {
+                        updateHighlight.run();
                     }
+                });
+                lbl.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
 
-                    @Override
-                    protected void done() {
-                        obfuscateBtn.setEnabled(true);
-                    }
-                };
-                worker.execute();
+            // Navigation buttons (shown in step content)
+            JButton prevBtn = new JButton("Previous");
+            JButton nextBtn = new JButton("Next");
+            prevBtn.setFocusPainted(false);
+            nextBtn.setFocusPainted(false);
+            prevBtn.addActionListener(e -> {
+                String current = getCurrentStep(content);
+                if (STEP_OBFUSCATION.equals(current)) { cards.show(content, STEP_INPUT); }
+                else if (STEP_ADVANCED.equals(current)) { cards.show(content, STEP_OBFUSCATION); }
+                else if (STEP_RUN.equals(current)) { cards.show(content, STEP_ADVANCED); }
+                updateHighlight.run();
+            });
+            nextBtn.addActionListener(e -> {
+                String current = getCurrentStep(content);
+                if (STEP_INPUT.equals(current)) { cards.show(content, STEP_OBFUSCATION); }
+                else if (STEP_OBFUSCATION.equals(current)) { cards.show(content, STEP_ADVANCED); }
+                else if (STEP_ADVANCED.equals(current)) { cards.show(content, STEP_RUN); }
+                updateHighlight.run();
             });
 
-            frame.addComponentListener(new java.awt.event.ComponentAdapter() {
-                @Override
-                public void componentResized(java.awt.event.ComponentEvent ev) {
-                    frame.repaint();
-                }
-            });
+            updateHighlight.run();
+
+            addNavToStep(step1, null, nextBtn);
+            addNavToStep(step2, prevBtn, nextBtn);
+            addNavToStep(step3, prevBtn, nextBtn);
+            addNavToStep(step4, prevBtn, null);
+
+            // Main layout
+            JPanel main = new JPanel(new BorderLayout(0, 0));
+            main.setBackground(BG_MAIN);
+            main.add(sidebar, BorderLayout.WEST);
+
+            JPanel centerWrap = new JPanel(new BorderLayout(8, 8));
+            centerWrap.setBorder(new EmptyBorder(16, 20, 16, 20));
+            centerWrap.setBackground(BG_MAIN);
+            centerWrap.add(content, BorderLayout.CENTER);
+            main.add(centerWrap, BorderLayout.CENTER);
 
             frame.setContentPane(main);
             frame.setVisible(true);
         });
+    }
+
+    private static String getCurrentStep(JPanel content) {
+        for (Component c : content.getComponents()) {
+            if (c.isVisible()) {
+                String name = c.getName();
+                return name != null ? name : STEP_INPUT;
+            }
+        }
+        return STEP_INPUT;
+    }
+
+    private static void addNavToStep(JPanel step, JButton prev, JButton next) {
+        JPanel nav = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
+        nav.setBackground(BG_MAIN);
+        if (prev != null) nav.add(prev);
+        if (next != null) nav.add(next);
+        step.add(nav, BorderLayout.SOUTH);
+    }
+
+    private static JPanel buildStep1Panel(JFrame frame, JTextField inputPath, JTextField outputName, JTextField outputDir) {
+        JPanel step = new JPanel(new BorderLayout(8, 8));
+        step.setBackground(BG_MAIN);
+        step.setName(STEP_INPUT);
+
+        JPanel inner = new JPanel(new BorderLayout(8, 8));
+        inner.setBackground(BG_PANEL);
+        inner.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Step 1: Input & Output",
+                0, 0, null, new Color(0x24292F)),
+            new EmptyBorder(12, 16, 16, 16)));
+
+        JButton browseInputBtn = new JButton("Browse...");
+        browseInputBtn.setFocusPainted(false);
+        browseInputBtn.setMaximumSize(new Dimension(85, 28));
+        browseInputBtn.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            fc.setFileFilter(new FileNameExtensionFilter("JAR files (*.jar)", "jar"));
+            if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                inputPath.setText(fc.getSelectedFile().getAbsolutePath());
+            }
+        });
+        JButton browseOutputBtn = new JButton("Browse...");
+        browseOutputBtn.setFocusPainted(false);
+        browseOutputBtn.setMaximumSize(new Dimension(85, 28));
+        browseOutputBtn.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            Path current = Path.of(outputDir.getText().trim());
+            if (Files.isDirectory(current)) fc.setCurrentDirectory(current.toFile());
+            if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                outputDir.setText(fc.getSelectedFile().getAbsolutePath());
+            }
+        });
+
+        JPanel filePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
+        filePanel.setBackground(BG_PANEL);
+        filePanel.add(new JLabel("Input JAR:"));
+        filePanel.add(inputPath);
+        filePanel.add(browseInputBtn);
+        inner.add(filePanel, BorderLayout.NORTH);
+
+        JPanel outputPanel = new JPanel(new GridLayout(2, 1, 6, 6));
+        outputPanel.setBackground(BG_PANEL);
+        JPanel outputNameRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
+        outputNameRow.setBackground(BG_PANEL);
+        outputNameRow.add(new JLabel("Output name:"));
+        outputNameRow.add(outputName);
+        JPanel outputDirRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
+        outputDirRow.setBackground(BG_PANEL);
+        outputDirRow.add(new JLabel("Output folder:"));
+        outputDirRow.add(outputDir);
+        outputDirRow.add(browseOutputBtn);
+        outputPanel.add(outputNameRow);
+        outputPanel.add(outputDirRow);
+        inner.add(outputPanel, BorderLayout.CENTER);
+
+        JLabel hint = new JLabel("<html>Select the JAR file to obfuscate and choose output location.</html>");
+        hint.setFont(hint.getFont().deriveFont(10f));
+        hint.setForeground(new Color(0x666666));
+        hint.setBorder(new EmptyBorder(8, 0, 0, 0));
+        inner.add(hint, BorderLayout.SOUTH);
+
+        step.add(inner, BorderLayout.CENTER);
+        return step;
+    }
+
+    private static JPanel buildStep2Panel(JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf,
+            JCheckBox booleanObf, JCheckBox stringObf, JCheckBox debugInfoStrip, JSpinner classNameLength) {
+        JPanel step = new JPanel(new BorderLayout(8, 8));
+        step.setBackground(BG_MAIN);
+        step.setName(STEP_OBFUSCATION);
+
+        JPanel inner = new JPanel(new BorderLayout(8, 8));
+        inner.setBackground(BG_PANEL);
+        inner.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Step 2: Obfuscation Options",
+                0, 0, null, new Color(0x24292F)),
+            new EmptyBorder(12, 16, 16, 16)));
+
+        JPanel grid = new JPanel() {
+            private static final int MIN_COL_WIDTH = 180;
+            @Override
+            public void doLayout() {
+                int w = getWidth();
+                int cols = w <= 0 ? 1 : Math.min(3, Math.max(1, w / MIN_COL_WIDTH));
+                if (getLayout() == null || !(getLayout() instanceof GridLayout) || ((GridLayout) getLayout()).getColumns() != cols) {
+                    setLayout(new GridLayout(0, cols, 12, 6));
+                }
+                super.doLayout();
+            }
+        };
+        grid.setBackground(BG_PANEL);
+        grid.add(classRename);
+        grid.add(numberObf);
+        grid.add(arrayObf);
+        grid.add(booleanObf);
+        grid.add(stringObf);
+        grid.add(debugInfoStrip);
+        JPanel lengthRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        lengthRow.setBackground(BG_PANEL);
+        lengthRow.add(new JLabel("Class name length:"));
+        lengthRow.add(classNameLength);
+        grid.add(lengthRow);
+        inner.add(grid, BorderLayout.CENTER);
+
+        JLabel hint = new JLabel("<html>Enable or disable obfuscation types. Class name length applies when renaming.</html>");
+        hint.setFont(hint.getFont().deriveFont(10f));
+        hint.setForeground(new Color(0x666666));
+        hint.setBorder(new EmptyBorder(8, 0, 0, 0));
+        inner.add(hint, BorderLayout.SOUTH);
+
+        step.add(inner, BorderLayout.CENTER);
+        return step;
+    }
+
+    private static JPanel buildStep3Panel(JCheckBox classNamesRandom, JCheckBox classNamesHomoglyph, JCheckBox classNamesInvisibleChars,
+            JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom,
+            JTextArea excludeArea, JFrame frame,
+            JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf, JCheckBox stringObf,
+            JCheckBox debugInfoStrip, JSpinner classNameLength) {
+        JPanel step = new JPanel(new BorderLayout(8, 8));
+        step.setBackground(BG_MAIN);
+        step.setName(STEP_ADVANCED);
+
+        JPanel inner = new JPanel(new BorderLayout(8, 8));
+        inner.setBackground(BG_PANEL);
+        inner.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Step 3: Advanced",
+                0, 0, null, new Color(0x24292F)),
+            new EmptyBorder(12, 16, 16, 16)));
+
+        JPanel top = new JPanel(new BorderLayout(6, 6));
+        top.setBackground(BG_PANEL);
+        JPanel classOpts = new JPanel(new GridLayout(0, 2, 6, 4));
+        classOpts.setBackground(BG_PANEL);
+        classOpts.add(classNamesRandom);
+        classOpts.add(classNamesHomoglyph);
+        classOpts.add(classNamesInvisibleChars);
+        JPanel keyOpts = new JPanel(new GridLayout(0, 2, 6, 4));
+        keyOpts.setBackground(BG_PANEL);
+        keyOpts.add(numberKeyRandom);
+        keyOpts.add(arrayKeyRandom);
+        keyOpts.add(booleanKeyRandom);
+        keyOpts.add(stringKeyRandom);
+        JPanel optsRow = new JPanel(new GridLayout(2, 1, 6, 6));
+        optsRow.setBackground(BG_PANEL);
+        optsRow.add(classOpts);
+        optsRow.add(keyOpts);
+        top.add(optsRow, BorderLayout.NORTH);
+
+        JPanel homoglyphInfo = new JPanel(new BorderLayout(4, 4));
+        homoglyphInfo.setBackground(BG_PANEL);
+        String info = "<html><b>Homoglyphs & invisible characters</b> – Unicode lookalikes and zero-width chars. Names appear normal but copy-paste fails.</html>";
+        JLabel infoLbl = new JLabel(info);
+        infoLbl.setFont(infoLbl.getFont().deriveFont(10f));
+        infoLbl.setForeground(new Color(0x555555));
+        infoLbl.setBorder(new EmptyBorder(4, 0, 8, 0));
+        homoglyphInfo.add(infoLbl, BorderLayout.NORTH);
+        top.add(homoglyphInfo, BorderLayout.CENTER);
+
+        JPanel configRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        configRow.setBackground(BG_PANEL);
+        JButton loadConfigBtn = new JButton("Load config.yml (JAR dir)");
+        loadConfigBtn.setFocusPainted(false);
+        loadConfigBtn.setMaximumSize(new Dimension(200, 28));
+        loadConfigBtn.addActionListener(ev -> {
+            var result = ConfigLoader.loadWithPath();
+            if (result.configPath() == null) {
+                ToastNotification.show(frame, "No config.yml found next to JAR. Using defaults.", ToastNotification.Type.INFO);
+                return;
+            }
+            applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
+                classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
+                stringKeyRandom, classNameLength, excludeArea, result.config());
+            ToastNotification.show(frame, "Config loaded.", ToastNotification.Type.SUCCESS);
+        });
+        JButton browseConfigBtn = new JButton("Browse config...");
+        browseConfigBtn.setFocusPainted(false);
+        browseConfigBtn.setMaximumSize(new Dimension(130, 28));
+        browseConfigBtn.addActionListener(ev -> {
+            JFileChooser fc = new JFileChooser();
+            fc.setFileFilter(new FileNameExtensionFilter("YAML files (*.yml, *.yaml)", "yml", "yaml"));
+            if (fc.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                try {
+                    var result = ConfigLoader.loadFrom(fc.getSelectedFile().toPath());
+                    applyConfig(classRename, numberObf, arrayObf, booleanObf, stringObf, debugInfoStrip, classNamesRandom,
+                        classNamesHomoglyph, classNamesInvisibleChars, numberKeyRandom, arrayKeyRandom, booleanKeyRandom,
+                        stringKeyRandom, classNameLength, excludeArea, result.config());
+                    ToastNotification.show(frame, "Config loaded from " + result.configPath().getFileName(), ToastNotification.Type.SUCCESS);
+                } catch (IOException ex) {
+                    ToastNotification.show(frame, "Config invalid: " + ex.getMessage(), ToastNotification.Type.ERROR);
+                }
+            }
+        });
+        configRow.add(loadConfigBtn);
+        configRow.add(browseConfigBtn);
+        top.add(configRow, BorderLayout.SOUTH);
+
+        inner.add(top, BorderLayout.NORTH);
+
+        JPanel excludePanel = new JPanel(new BorderLayout(4, 4));
+        excludePanel.setBackground(BG_PANEL);
+        excludePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Exclude classes (one per line)"));
+        excludePanel.add(new JScrollPane(excludeArea), BorderLayout.CENTER);
+        JLabel excludeInfo = new JLabel(EXCLUDE_INFO);
+        excludeInfo.setFont(excludeInfo.getFont().deriveFont(10f));
+        excludeInfo.setForeground(new Color(0x666666));
+        excludePanel.add(excludeInfo, BorderLayout.SOUTH);
+        inner.add(excludePanel, BorderLayout.CENTER);
+
+        step.add(inner, BorderLayout.CENTER);
+        return step;
+    }
+
+    private static JPanel buildStep4Panel(JTextField inputPath, JTextField outputName, JTextField outputDir, JTextArea excludeArea,
+            JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf, JCheckBox stringObf,
+            JCheckBox debugInfoStrip, JCheckBox classNamesRandom, JCheckBox classNamesHomoglyph, JCheckBox classNamesInvisibleChars,
+            JCheckBox numberKeyRandom, JCheckBox arrayKeyRandom, JCheckBox booleanKeyRandom, JCheckBox stringKeyRandom,
+            JSpinner classNameLength, JFrame frame, JTextPane outputPane) {
+        JPanel step = new JPanel(new BorderLayout(8, 8));
+        step.setBackground(BG_MAIN);
+        step.setName(STEP_RUN);
+
+        JPanel inner = new JPanel(new BorderLayout(12, 12));
+        inner.setBackground(BG_PANEL);
+        inner.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createTitledBorder(new LineBorder(BORDER, 1), "Step 4: Run Obfuscation",
+                0, 0, null, new Color(0x24292F)),
+            new EmptyBorder(12, 16, 16, 16)));
+
+        JLabel summary = new JLabel("<html><b>Ready to obfuscate.</b> Output log will appear below.</html>");
+        summary.setBorder(new EmptyBorder(0, 0, 12, 0));
+        inner.add(summary, BorderLayout.NORTH);
+
+        JButton obfuscateBtn = new JButton("Obfuscate");
+        obfuscateBtn.setFont(obfuscateBtn.getFont().deriveFont(Font.BOLD, 14f));
+        obfuscateBtn.setBackground(ACCENT);
+        obfuscateBtn.setForeground(Color.WHITE);
+        obfuscateBtn.setFocusPainted(false);
+        obfuscateBtn.setBorderPainted(true);
+        obfuscateBtn.setOpaque(true);
+        obfuscateBtn.setBorder(new EmptyBorder(12, 24, 12, 24));
+        obfuscateBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        btnPanel.setBackground(BG_PANEL);
+        btnPanel.add(obfuscateBtn);
+        inner.add(btnPanel, BorderLayout.NORTH);
+
+        JScrollPane outputScroll = new JScrollPane(outputPane);
+        outputScroll.setBorder(new CompoundBorder(new LineBorder(BORDER, 1), new EmptyBorder(0, 0, 0, 0)));
+        outputScroll.getViewport().setBackground(new Color(0x2D2D30));
+        outputScroll.setPreferredSize(new Dimension(0, 180));
+        inner.add(outputScroll, BorderLayout.CENTER);
+
+        obfuscateBtn.addActionListener(e -> {
+            String pathStr = inputPath.getText().trim();
+            if (pathStr.isEmpty()) {
+                ToastNotification.show(frame, "Please select an input JAR file.", ToastNotification.Type.WARN);
+                return;
+            }
+            Path input = Path.of(pathStr);
+            if (!Files.isRegularFile(input)) {
+                ToastNotification.show(frame, "Input file does not exist.", ToastNotification.Type.ERROR);
+                return;
+            }
+
+            String outNameStr = outputName.getText().trim();
+            if (outNameStr.isEmpty()) {
+                outNameStr = input.getFileName().toString().replaceAll("\\.jar$", "") + "-obfuscated.jar";
+            } else if (!outNameStr.endsWith(".jar")) {
+                outNameStr += ".jar";
+            }
+            Path outputDirPath = Path.of(outputDir.getText().trim());
+            if (!Files.isDirectory(outputDirPath)) {
+                try {
+                    Files.createDirectories(outputDirPath);
+                } catch (IOException ex) {
+                    ToastNotification.show(frame, "Cannot create output folder: " + ex.getMessage(), ToastNotification.Type.ERROR);
+                    return;
+                }
+            }
+            Path outputPath = outputDirPath.resolve(outNameStr);
+
+            List<String> excludeList = Arrays.stream(excludeArea.getText().split("\\n"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+
+            obfuscateBtn.setEnabled(false);
+            outputPane.setText("");
+
+            ObfuscatorConfig config = new ObfuscatorConfig(
+                classRename.isSelected(),
+                numberObf.isSelected(),
+                arrayObf.isSelected(),
+                booleanObf.isSelected(),
+                stringObf.isSelected(),
+                debugInfoStrip.isSelected(),
+                classNamesRandom.isSelected(),
+                (Integer) classNameLength.getValue(),
+                classNamesHomoglyph.isSelected(),
+                classNamesInvisibleChars.isSelected(),
+                numberKeyRandom.isSelected(),
+                arrayKeyRandom.isSelected(),
+                booleanKeyRandom.isSelected(),
+                stringKeyRandom.isSelected(),
+                excludeList
+            );
+
+            SwingWorker<Void, String> worker = new SwingWorker<>() {
+                @Override
+                protected Void doInBackground() {
+                    Logger.setGuiOutput(line -> publish(line));
+                    try {
+                        if (Files.exists(outputPath)) {
+                            Files.delete(outputPath);
+                        }
+                        ObfuscationPipeline pipeline = new ObfuscationPipeline();
+                        pipeline.run(input, outputPath, config);
+                        publish("Done. Output: " + outputPath.toAbsolutePath());
+                        SwingUtilities.invokeLater(() -> ToastNotification.show(frame, "Obfuscation completed.", ToastNotification.Type.SUCCESS));
+                    } catch (IOException ex) {
+                        publish("ERROR: " + ex.getMessage());
+                        SwingUtilities.invokeLater(() -> ToastNotification.show(frame, "Failed: " + ex.getMessage(), ToastNotification.Type.ERROR));
+                    } finally {
+                        Logger.setGuiOutput(null);
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void process(java.util.List<String> chunks) {
+                    for (String line : chunks) {
+                        appendColored(outputPane, line);
+                    }
+                }
+
+                @Override
+                protected void done() {
+                    obfuscateBtn.setEnabled(true);
+                }
+            };
+            worker.execute();
+        });
+
+        step.add(inner, BorderLayout.CENTER);
+        return step;
     }
 
     private static void applyConfig(JCheckBox classRename, JCheckBox numberObf, JCheckBox arrayObf, JCheckBox booleanObf,
@@ -376,17 +643,17 @@ public final class ObfuscatorGui {
     private static void appendColored(JTextPane pane, String line) {
         Color color;
         if (line.startsWith("[INFO]")) {
-            color = new Color(0x4EC9B0);
+            color = new Color(0x58A6FF);
         } else if (line.startsWith("[STEP]")) {
-            color = new Color(0x569CD6);
+            color = new Color(0x79C0FF);
         } else if (line.startsWith("[OK]")) {
-            color = new Color(0x6A9955);
-        } else if (line.startsWith("[WARN]")) {
-            color = new Color(0xDCDCAA);
+            color = new Color(0x3FB950);
+        } else if (line.startsWith("[WARN]") || line.toUpperCase().contains("WARNING")) {
+            color = new Color(0xFF7B72);
         } else if (line.startsWith("[ERROR]") || line.startsWith("ERROR:")) {
-            color = new Color(0xF44747);
+            color = new Color(0xF85149);
         } else if (line.startsWith("Done.")) {
-            color = new Color(0x6A9955);
+            color = new Color(0x3FB950);
         } else {
             color = new Color(0xD4D4D4);
         }
