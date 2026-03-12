@@ -32,14 +32,14 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 
 - **Class renaming** – Short or random names; configurable length
 - **Method renaming** – Obfuscate method names; handles override chains
-- **Local variable & field renaming** *(planned)* – Obfuscate field and local variable names
+- **Field renaming** – Obfuscate field names; excludes serialVersionUID and enum constants
 - **Homoglyph & invisible chars** – Unicode lookalikes (a→а) and zero-width chars; copy-paste fails
 - **Number obfuscation** – Hides `int`, `long`, `float`, `double` with XOR
 - **Array obfuscation** – Hides array dimensions
 - **Boolean obfuscation** – Hides `true`/`false` literals
 - **String obfuscation** – Encrypts string literals (XOR), decrypts at runtime
 - **Debug info stripping** – Removes source names, line numbers, local variable names
-- **Local variable & field renaming** *(planned)* – Obfuscate field and local variable names
+- **Local variable renaming** *(planned)* – Obfuscate local variable names when debug kept
 - **Random options** – Optional random keys and class/method names per build
 - **Exclude patterns** – Skip JDK, Bukkit, Minecraft, and custom packages
 - **YAML config** – `config.yml` next to the JAR
@@ -170,6 +170,8 @@ public final class ь {
 | Transform        | Effect                                                                 |
 |------------------|-----------------------------------------------------------------------|
 | Class renaming   | `Main` → `b`, `DemoService` → `ь` (short names; homoglyph: `а`, `ь`)  |
+| Method renaming  | `run()` → `a()` (excludes main, constructors, native)                 |
+| Field renaming   | `SECRET_KEY` → `f`, `counter` → `g`                                  |
 | Homoglyph        | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
 | Invisible chars  | Zero-width chars in names – appear normal but differ                 |
 | Number obfuscation | `25565` → `(x ^ key) ^ key`; floats/doubles via bit XOR             |

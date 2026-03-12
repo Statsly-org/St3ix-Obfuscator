@@ -38,6 +38,7 @@ public final class ConfigLoader {
 
             boolean classRenamingEnabled = getBoolean(raw, "classRenamingEnabled", true);
             boolean methodRenamingEnabled = getBoolean(raw, "methodRenamingEnabled", true);
+            boolean fieldRenamingEnabled = getBoolean(raw, "fieldRenamingEnabled", true);
             boolean numberObfuscationEnabled = getBoolean(raw, "numberObfuscationEnabled", true);
             boolean arrayObfuscationEnabled = getBoolean(raw, "arrayObfuscationEnabled", true);
             boolean booleanObfuscationEnabled = getBoolean(raw, "booleanObfuscationEnabled", true);
@@ -51,6 +52,10 @@ public final class ConfigLoader {
             int methodNameLength = getInt(raw, "methodNameLength", 4);
             boolean methodNamesHomoglyph = getBoolean(raw, "methodNamesHomoglyph", false);
             boolean methodNamesInvisibleChars = getBoolean(raw, "methodNamesInvisibleChars", false);
+            boolean fieldNamesRandom = getBoolean(raw, "fieldNamesRandom", false);
+            int fieldNameLength = getInt(raw, "fieldNameLength", 4);
+            boolean fieldNamesHomoglyph = getBoolean(raw, "fieldNamesHomoglyph", false);
+            boolean fieldNamesInvisibleChars = getBoolean(raw, "fieldNamesInvisibleChars", false);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
             boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
             boolean booleanKeyRandom = getBoolean(raw, "booleanKeyRandom", false);
@@ -58,10 +63,11 @@ public final class ConfigLoader {
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
 
             return new LoadResult(new ObfuscatorConfig(
-                classRenamingEnabled, methodRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
+                classRenamingEnabled, methodRenamingEnabled, fieldRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
                 booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
                 classNamesRandom, classNameLength, classNamesHomoglyph, classNamesInvisibleChars,
                 methodNamesRandom, methodNameLength, methodNamesHomoglyph, methodNamesInvisibleChars,
+                fieldNamesRandom, fieldNameLength, fieldNamesHomoglyph, fieldNamesInvisibleChars,
                 numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {
@@ -86,6 +92,7 @@ public final class ConfigLoader {
         try {
             boolean classRenamingEnabled = getBoolean(raw, "classRenamingEnabled", true);
             boolean methodRenamingEnabled = getBoolean(raw, "methodRenamingEnabled", true);
+            boolean fieldRenamingEnabled = getBoolean(raw, "fieldRenamingEnabled", true);
             boolean numberObfuscationEnabled = getBoolean(raw, "numberObfuscationEnabled", true);
             boolean arrayObfuscationEnabled = getBoolean(raw, "arrayObfuscationEnabled", true);
             boolean booleanObfuscationEnabled = getBoolean(raw, "booleanObfuscationEnabled", true);
@@ -99,16 +106,21 @@ public final class ConfigLoader {
             int methodNameLength = getInt(raw, "methodNameLength", 4);
             boolean methodNamesHomoglyph = getBoolean(raw, "methodNamesHomoglyph", false);
             boolean methodNamesInvisibleChars = getBoolean(raw, "methodNamesInvisibleChars", false);
+            boolean fieldNamesRandom = getBoolean(raw, "fieldNamesRandom", false);
+            int fieldNameLength = getInt(raw, "fieldNameLength", 4);
+            boolean fieldNamesHomoglyph = getBoolean(raw, "fieldNamesHomoglyph", false);
+            boolean fieldNamesInvisibleChars = getBoolean(raw, "fieldNamesInvisibleChars", false);
             boolean numberKeyRandom = getBoolean(raw, "numberKeyRandom", false);
             boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
             boolean booleanKeyRandom = getBoolean(raw, "booleanKeyRandom", false);
             boolean stringKeyRandom = getBoolean(raw, "stringKeyRandom", false);
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
             return new LoadResult(new ObfuscatorConfig(
-                classRenamingEnabled, methodRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
+                classRenamingEnabled, methodRenamingEnabled, fieldRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
                 booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
                 classNamesRandom, classNameLength, classNamesHomoglyph, classNamesInvisibleChars,
                 methodNamesRandom, methodNameLength, methodNamesHomoglyph, methodNamesInvisibleChars,
+                fieldNamesRandom, fieldNameLength, fieldNamesHomoglyph, fieldNamesInvisibleChars,
                 numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {

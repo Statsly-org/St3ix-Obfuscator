@@ -10,6 +10,7 @@ public final class Main {
         DemoService service = new DemoService();
         service.run();
         new DebugStrippingDemo().demonstrateLocalVariables();
+        new ObfuscationVerifyDemo().verify();
         CrossRefTest crossRef = new CrossRefTest();
         crossRef.run();
     }
