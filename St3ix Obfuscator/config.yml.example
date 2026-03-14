@@ -3,7 +3,13 @@
 # Enable or disable class renaming
 classRenamingEnabled: true
 
-# Obfuscate numeric constants (int/long) using XOR
+# Enable or disable method renaming (excludes constructors, main, native, enum methods)
+methodRenamingEnabled: true
+
+# Enable or disable field renaming (excludes serialVersionUID, enum constants)
+fieldRenamingEnabled: true
+
+# Obfuscate numeric constants (int = math expressions; long/float/double = XOR)
 numberObfuscationEnabled: true
 
 # Obfuscate array dimensions (new Type[n] -> n hidden with XOR)
@@ -12,18 +18,39 @@ arrayObfuscationEnabled: true
 # Obfuscate boolean constants (true/false -> value hidden with XOR)
 booleanObfuscationEnabled: true
 
+# Obfuscate string literals (encrypt at build time, decrypt at runtime)
+stringObfuscationEnabled: true
+
+# Strip debug info (source file, line numbers, local variable names)
+debugInfoStrippingEnabled: true
+
 # Class name generation
 classNamesRandom: false   # true = random names per build, false = sequential (a, b, c...)
 classNameLength: 6       # minimum length of class names (1-32). Longer = harder to read.
+classNamesHomoglyph: false   # use lookalike chars (Cyrillic а vs Latin a); copy-paste fails
+classNamesInvisibleChars: false  # inject zero-width chars; names appear normal but differ
 
-# Obfuscation keys (XOR)
-numberKeyRandom: false   # true = random key per build, false = fixed key
+# Method name generation
+methodNamesRandom: false   # true = random method names per build, false = sequential
+methodNameLength: 4        # minimum length of method names (1-32)
+methodNamesHomoglyph: false   # use lookalike chars for method names
+methodNamesInvisibleChars: false  # inject zero-width chars in method names
+
+# Field name generation
+fieldNamesRandom: false    # true = random field names per build
+fieldNameLength: 4         # minimum length of field names (1-32)
+fieldNamesHomoglyph: false # use lookalike chars for field names
+fieldNamesInvisibleChars: false  # inject zero-width chars in field names
+
+# Obfuscation keys / randomization
+numberKeyRandom: false   # true = random expression pattern per value, false = deterministic
 arrayKeyRandom: false    # true = random key per build, false = fixed key
 booleanKeyRandom: false  # true = random key per build, false = fixed key
+stringKeyRandom: false   # true = random key per build, false = fixed key
 
 # Classes/packages to exclude from renaming.
-# Use dot or slash notation. Prefix matches (org.bukkit excludes org.bukkit.*)
-# Built-in excludes: java.*, javax.*, org.bukkit.*, net.minecraft.*, org.spigotmc.*, etc.
+# Use "*" to exclude ALL classes (no renaming). Prefix: com.example excludes com.example.*
+# Built-in excludes: java.*, javax.*, org.bukkit.*, net.minecraft.*, etc.
 excludeClasses:
   - com.myapp.sensitive
   - org.example.api
