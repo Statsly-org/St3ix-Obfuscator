@@ -45,6 +45,9 @@
 **/*.swo
 **/*~
 
+# Ignore website (diff repo)
+website/
+
 # Cursor
 **/.cursor/
 
