@@ -122,6 +122,10 @@ public final class MethodMapping {
         if ((access & Opcodes.ACC_NATIVE) != 0) return false;
         if ("valueOf".equals(name) && desc.startsWith("(Ljava/lang/String;)")) return false;
         if ("values".equals(name) && desc.startsWith("()[L")) return false;  // enum values()
+        // Object methods invoked by JDK (String.valueOf, PrintStream, HashMap, etc.) – keep original names
+        if ("toString".equals(name) && "()Ljava/lang/String;".equals(desc)) return false;
+        if ("equals".equals(name) && "(Ljava/lang/Object;)Z".equals(desc)) return false;
+        if ("hashCode".equals(name) && "()I".equals(desc)) return false;
         return true;
     }
 

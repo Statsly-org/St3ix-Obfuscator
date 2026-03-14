@@ -37,7 +37,7 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 - **Number obfuscation** – Hides `int` via math expressions (`123` → `(50*3)-27`); `long`/`float`/`double` via XOR
 - **Array obfuscation** – Hides array dimensions
 - **Boolean obfuscation** – Hides `true`/`false` literals
-- **String obfuscation** – Encrypts string literals (XOR); inline decrypt at each use; key per class and per string (no central decoder, no dump point)
+- **String obfuscation** – XOR encryption; inline decrypt at each use; key per class and per string; static final String fields initialized in &lt;clinit&gt; (no readable API keys/secrets)
 - **Debug info stripping** – Removes source names, line numbers, local variable names
 - **Local variable renaming** *(planned)* – Obfuscate local variable names when debug kept
 - **Random options** – Optional random keys and class/method/field names per build
@@ -145,21 +145,19 @@ public final class LicenseValidator {
 **After obfuscation** (class, method, number, string, debug stripping, homoglyph):
 
 ```java
-
+// String constant obfuscation: built from char codes, no readable text
 public final class b {
     public static void main(String[] args) {
-        byte[] enc = new byte[]{...};
-        byte[] out = new byte[enc.length];
-        for (int i = 0; i < enc.length; i++)
-            out[i] = (byte)(enc[i] ^ ((key + i) & 0xFF));
-        System.out.println(new String(out, StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+        sb.append((char)(50+59)); sb.append((char)(120+1)); sb.append((char)45); // ...
+        System.out.println(sb.toString());  // "License..." – unreadable in source
         ь var0 = new ь();
         var0.a();
     }
 }
 
 public final class ь {
-    private static final String a = /* inline decrypt */;
+    private static final String a = /* built from (char)(expr) per character */;
     private int b;
     
     public void a() {
@@ -181,14 +179,12 @@ public final class ь {
 | Invisible chars   | Zero-width chars in names – appear normal but differ                  |
 | Number obfuscation  | `443` → `431+12`, `3` → `2*2-1` (math expressions)                 |
 | Boolean obfuscation | `true` → `(value ^ key) ^ key`                                    |
-| String obfuscation  | Inline XOR decrypt at each use; key per class and per string; no central decoder → no dump point |
+| String obfuscation  | Constant obfuscation: strings built from char codes via math expressions; no readable text in decompiler |
 | Debug stripping   | Local vars become `var0`, `var1`; line numbers removed                |
 
 ### Strength
 
-Obfuscation raises the bar for casual and automated reverse engineering. Numbers are hidden as math expressions at compile time; decompilers show the expression, not the literal. Strings use **runtime-computed keys** (`key ^ class.hashCode() ^ index` per string), decrypted inline at each use site—no central decoder, no single breakpoint to dump all strings.
-
-We chose XOR over AES for string encryption: AES would be overkill for typical JAR obfuscation and adds complexity (IV handling, block size). XOR with per-class/per-string keys is lightweight and effective against `strings`-tools and casual inspection. **Issues and PRs are open**—if you want AES or stronger encryption, contributions are welcome.
+Obfuscation raises the bar for casual and automated reverse engineering. Numbers are hidden as math expressions at compile time; decompilers show the expression, not the literal. Strings use **constant obfuscation**: each character is built from math expressions (e.g. `(char)(50+59)` for 'm'), so API keys, secrets, and literals never appear as readable text. No string in the constant pool; nothing for `strings`-tools to extract. **Issues and PRs are open**—if you want AES/XOR encryption as an optional mode, contributions are welcome.
 
 Realistic caveats: determined reversers can still trace decryption logic; obfuscation is a deterrent, not unbreakable protection.
 
