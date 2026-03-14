@@ -22,4 +22,14 @@ public final class StringHelper {
         }
         return false;
     }
+
+    /**
+     * Linear method for flow obfuscation demo: formats id as "id=N;" without branches.
+     */
+    public static String formatIdLinear(int id) {
+        String prefix = "id=";
+        String num = String.valueOf(id);
+        String suffix = ";";
+        return prefix + num + suffix;
+    }
 }

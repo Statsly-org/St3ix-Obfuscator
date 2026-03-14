@@ -21,6 +21,9 @@ booleanObfuscationEnabled: true
 # Obfuscate string literals (encrypt at build time, decrypt at runtime)
 stringObfuscationEnabled: true
 
+# Control flow obfuscation (flatten method control flow via switch dispatcher)
+flowObfuscationEnabled: false
+
 # Strip debug info (source file, line numbers, local variable names)
 debugInfoStrippingEnabled: true
 
@@ -47,6 +50,7 @@ numberKeyRandom: false   # true = random expression pattern per value, false = d
 arrayKeyRandom: false    # true = random key per build, false = fixed key
 booleanKeyRandom: false  # true = random key per build, false = fixed key
 stringKeyRandom: false   # true = random key per build, false = fixed key
+flowKeyRandom: false    # true = random key per build, false = fixed key
 
 # Classes/packages to exclude from renaming.
 # Use "*" to exclude ALL classes (no renaming). Prefix: com.example excludes com.example.*

@@ -21,6 +21,8 @@ public final class CrossRefTest {
         service.run();
         String reversed = StringHelper.reverse("cross-ref");
         System.out.println("Reversed: " + reversed);
+        String formatted = StringHelper.formatIdLinear(user.getId());
+        System.out.println("Formatted: " + formatted);
         System.out.println("User: " + user);
     }
 }

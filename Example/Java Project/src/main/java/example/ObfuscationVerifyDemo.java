@@ -31,8 +31,10 @@ public final class ObfuscationVerifyDemo {
         int port = 25565;
         int seed = 12345;
         int threshold = 1000;
+        int sum = port + seed + threshold;
 
         System.out.println("ObfuscationVerifyDemo: port=" + port + ", seed=" + seed + ", threshold=" + threshold);
+        System.out.println("Sum=" + sum);
         System.out.println("Field (apiKey): " + apiKey);
     }
 }

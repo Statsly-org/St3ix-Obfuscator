@@ -23,19 +23,19 @@ public final class Logger {
     }
 
     public static void info(String message) {
-        log("INFO", message, "\033[32m");
+        log("INFO", message, "\033[34m");
     }
 
     public static void info(String format, Object... args) {
-        log("INFO", String.format(format, args), "\033[32m");
+        log("INFO", String.format(format, args), "\033[34m");
     }
 
     public static void step(String message) {
-        log("STEP", message, "\033[36m");
+        log("STEP", message, "\033[96m\033[1m");
     }
 
     public static void step(String format, Object... args) {
-        log("STEP", String.format(format, args), "\033[36m");
+        log("STEP", String.format(format, args), "\033[96m\033[1m");
     }
 
     public static void success(String message) {
@@ -47,11 +47,30 @@ public final class Logger {
     }
 
     public static void warn(String message) {
-        log("WARN", message, "\033[33m");
+        log("WARN", message, "\033[33m\033[1m");
+    }
+
+    public static void warn(String format, Object... args) {
+        log("WARN", String.format(format, args), "\033[33m\033[1m");
     }
 
     public static void error(String message) {
-        log("ERROR", message, "\033[31m");
+        log("ERROR", message, "\033[31m\033[1m");
+    }
+
+    /** Flow obfuscation: method was flattened into switch-dispatcher (success). */
+    public static void flowFlattened(String format, Object... args) {
+        log("FLOW", String.format(format, args), "\033[92m\033[1m");
+    }
+
+    /** Flow obfuscation: method was skipped (e.g. unsupported control flow, too few blocks). */
+    public static void flowSkipped(String format, Object... args) {
+        log("SKIP", String.format(format, args), "\033[95m");
+    }
+
+    /** Flow obfuscation: transform progress (class being processed). */
+    public static void flowTransform(String format, Object... args) {
+        log("FLOW", String.format(format, args), "\033[96m");
     }
 
     private static void log(String level, String message, String color) {

@@ -60,15 +60,17 @@ public final class ConfigLoader {
             boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
             boolean booleanKeyRandom = getBoolean(raw, "booleanKeyRandom", false);
             boolean stringKeyRandom = getBoolean(raw, "stringKeyRandom", false);
+            boolean flowObfuscationEnabled = getBoolean(raw, "flowObfuscationEnabled", false);
+            boolean flowKeyRandom = getBoolean(raw, "flowKeyRandom", false);
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
 
             return new LoadResult(new ObfuscatorConfig(
                 classRenamingEnabled, methodRenamingEnabled, fieldRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
-                booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
+                booleanObfuscationEnabled, stringObfuscationEnabled, flowObfuscationEnabled, debugInfoStrippingEnabled,
                 classNamesRandom, classNameLength, classNamesHomoglyph, classNamesInvisibleChars,
                 methodNamesRandom, methodNameLength, methodNamesHomoglyph, methodNamesInvisibleChars,
                 fieldNamesRandom, fieldNameLength, fieldNamesHomoglyph, fieldNamesInvisibleChars,
-                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, flowKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {
             return new LoadResult(ObfuscatorConfig.defaults(), null);
@@ -114,14 +116,16 @@ public final class ConfigLoader {
             boolean arrayKeyRandom = getBoolean(raw, "arrayKeyRandom", false);
             boolean booleanKeyRandom = getBoolean(raw, "booleanKeyRandom", false);
             boolean stringKeyRandom = getBoolean(raw, "stringKeyRandom", false);
+            boolean flowObfuscationEnabled = getBoolean(raw, "flowObfuscationEnabled", false);
+            boolean flowKeyRandom = getBoolean(raw, "flowKeyRandom", false);
             List<String> excludeClasses = getStringList(raw, "excludeClasses");
             return new LoadResult(new ObfuscatorConfig(
                 classRenamingEnabled, methodRenamingEnabled, fieldRenamingEnabled, numberObfuscationEnabled, arrayObfuscationEnabled,
-                booleanObfuscationEnabled, stringObfuscationEnabled, debugInfoStrippingEnabled,
+                booleanObfuscationEnabled, stringObfuscationEnabled, flowObfuscationEnabled, debugInfoStrippingEnabled,
                 classNamesRandom, classNameLength, classNamesHomoglyph, classNamesInvisibleChars,
                 methodNamesRandom, methodNameLength, methodNamesHomoglyph, methodNamesInvisibleChars,
                 fieldNamesRandom, fieldNameLength, fieldNamesHomoglyph, fieldNamesInvisibleChars,
-                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, excludeClasses
+                numberKeyRandom, arrayKeyRandom, booleanKeyRandom, stringKeyRandom, flowKeyRandom, excludeClasses
             ), configPath);
         } catch (Exception e) {
             throw new IOException("Config format invalid: " + e.getMessage());
