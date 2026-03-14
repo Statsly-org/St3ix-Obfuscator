@@ -41,6 +41,7 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 - **Array obfuscation** – Hides array dimensions
 - **Boolean obfuscation** – Hides `true`/`false` literals
 - **String obfuscation** – XOR encryption; inline decrypt at each use; key per class and per string; static final String fields initialized in &lt;clinit&gt; (no readable API keys/secrets)
+- **Flow obfuscation** – Linear methods flattened into switch-dispatcher; execution order obscured
 - **Debug info stripping** – Removes source names, line numbers, local variable names
 - **Local variable renaming** *(planned)* – Obfuscate local variable names when debug kept
 - **Random options** – Optional random keys and class/method/field names per build
@@ -75,6 +76,7 @@ numberObfuscationEnabled: true
 arrayObfuscationEnabled: true
 booleanObfuscationEnabled: true
 stringObfuscationEnabled: true
+flowObfuscationEnabled: true
 debugInfoStrippingEnabled: true
 classNamesRandom: false
 classNameLength: 6
@@ -84,6 +86,7 @@ numberKeyRandom: false
 arrayKeyRandom: false
 booleanKeyRandom: false
 stringKeyRandom: false
+flowKeyRandom: false
 excludeClasses:
   - com.myapp.sensitive
 ```
@@ -127,6 +130,8 @@ public final class Main {
         System.out.println("License validation active.");
         LicenseValidator validator = new LicenseValidator();
         validator.validate();
+        DataProcessor proc = new DataProcessor();
+        proc.process(10, 20);
     }
 }
 
@@ -134,7 +139,7 @@ public final class Main {
 public final class LicenseValidator {
     private static final String API_KEY = "sk-live-a7f3b9c2e1d4";
     private int validationCount;
-    
+
     public void validate() {
         validationCount++;
         int port = 443;           // HTTPS
@@ -143,9 +148,21 @@ public final class LicenseValidator {
         System.out.println("port=" + port + ", retries=" + maxRetries);
     }
 }
+
+// example/DataProcessor.java – linear method + array (flow & array obfuscation)
+public final class DataProcessor {
+    public int process(int a, int b) {
+        int[] buf = new int[8];
+        int step1 = a * 2;
+        int step2 = step1 + b;
+        int step3 = step2 / 3;
+        int step4 = step3 - 7;
+        return step4;
+    }
+}
 ```
 
-**After obfuscation** (class, method, number, string, debug stripping, homoglyph):
+**After obfuscation** (class, method, field, number, array, boolean, string, flow, debug stripping, homoglyph):
 
 ```java
 // String constant obfuscation: built from char codes, no readable text
@@ -156,13 +173,15 @@ public final class b {
         System.out.println(sb.toString());  // "License..." – unreadable in source
         ь var0 = new ь();
         var0.a();
+        с var1 = new с();
+        var1.b(10, 20);
     }
 }
 
 public final class ь {
     private static final String a = /* built from (char)(expr) per character */;
     private int b;
-    
+
     public void a() {
         this.b++;
         int var0 = 431 + 12;      // 443 via expression
@@ -171,19 +190,48 @@ public final class ь {
         System.out.println("port=" + var0 + ", retries=" + var1);
     }
 }
+
+public final class с {
+    public int b(int a, int b) {
+        int[] var3 = new int[(8 ^ 0x3B9A7C2E) ^ 0x3B9A7C2E];  // array dimension obfuscated
+        int var4 = 0x3B9A7C2E;   // flow: initial dispatch state
+        int var5 = 0, var6 = 0, var7 = 0, var8 = 0;
+        while (true) {
+            switch (var4) {
+                case 0x3B9A7C2E:
+                    var5 = a * 2;
+                    var4 = 0x3B9A7C33;
+                    break;
+                case 0x3B9A7C33:
+                    var6 = var5 + b;
+                    var4 = 0x3B9A7C38;
+                    break;
+                case 0x3B9A7C38:
+                    var7 = var6 / 3;
+                    var4 = 0x3B9A7C3D;
+                    break;
+                case 0x3B9A7C3D:
+                    var8 = var7 - 7;
+                    return var8;
+            }
+        }
+    }
+}
 ```
 
-| Transform         | Effect                                                                 |
-|-------------------|-----------------------------------------------------------------------|
-| Class renaming    | `Main` → `b`, `LicenseValidator` → `ь` (short names; homoglyph: `а`, `ь`) |
-| Method renaming   | `validate()` → `a()` (excludes main, constructors, native)            |
-| Field renaming    | `API_KEY` → `a`, `validationCount` → `b`                              |
-| Homoglyph         | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
-| Invisible chars   | Zero-width chars in names – appear normal but differ                  |
+| Transform           | Effect                                                                 |
+|---------------------|-----------------------------------------------------------------------|
+| Class renaming      | `Main` → `b`, `LicenseValidator` → `ь`, `DataProcessor` → `с` (short names; homoglyph) |
+| Method renaming     | `validate()` → `a()`, `process()` → `b()` (excludes main, constructors, native) |
+| Field renaming      | `API_KEY` → `a`, `validationCount` → `b`                              |
+| Homoglyph           | Latin `a` becomes Cyrillic `а` (U+0430) – copy-paste fails           |
+| Invisible chars     | Zero-width chars in names – appear normal but differ                  |
 | Number obfuscation  | `443` → `431+12`, `3` → `2*2-1` (math expressions)                 |
-| Boolean obfuscation | `true` → `(value ^ key) ^ key`                                    |
-| String obfuscation  | Constant obfuscation: strings built from char codes via math expressions; no readable text in decompiler |
-| Debug stripping   | Local vars become `var0`, `var1`; line numbers removed                |
+| Array obfuscation   | `new int[8]` → `new int[(8 ^ key) ^ key]`                            |
+| Boolean obfuscation | `true` → `(value ^ key) ^ key`                                      |
+| String obfuscation  | Strings built from char codes via math expressions; no readable text  |
+| Flow obfuscation    | Linear methods → switch-dispatcher; execution order obscured         |
+| Debug stripping     | Local vars become `var0`, `var1`; line numbers removed                |
 
 ### Strength
 
