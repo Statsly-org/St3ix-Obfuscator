@@ -11,6 +11,7 @@ public final class Main {
         service.run();
         new DebugStrippingDemo().demonstrateLocalVariables();
         new ObfuscationVerifyDemo().verify();
+        new FlowObfuscationDemo().run();
         CrossRefTest crossRef = new CrossRefTest();
         crossRef.run();
     }

@@ -9,6 +9,7 @@ import st3ix.obfuscator.log.Logger;
 import st3ix.obfuscator.transform.ArrayObfuscator;
 import st3ix.obfuscator.transform.BooleanObfuscator;
 import st3ix.obfuscator.transform.ClassMapping;
+import st3ix.obfuscator.transform.FlowObfuscator;
 import st3ix.obfuscator.transform.ClassRenamer;
 import st3ix.obfuscator.transform.DebugInfoStripper;
 import st3ix.obfuscator.transform.FieldMapping;
@@ -23,6 +24,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -49,7 +56,7 @@ public final class ObfuscationPipeline {
                 int totalSteps = (config.methodRenamingEnabled() ? 1 : 0) + (config.fieldRenamingEnabled() ? 1 : 0)
                     + (config.numberObfuscationEnabled() ? 1 : 0) + (config.arrayObfuscationEnabled() ? 1 : 0)
                     + (config.booleanObfuscationEnabled() ? 1 : 0) + (config.stringObfuscationEnabled() ? 1 : 0)
-                    + (config.debugInfoStrippingEnabled() ? 1 : 0) + 1;
+                    + (config.flowObfuscationEnabled() ? 1 : 0) + (config.debugInfoStrippingEnabled() ? 1 : 0) + 1;
                 if (config.methodRenamingEnabled()) {
                     Logger.step("Step %d/%d: Method renaming", stepNum++, totalSteps);
                     MethodMapping methodMapping = new MethodMapping(config.methodNamesRandom(), config.methodNameLength(),
@@ -112,6 +119,14 @@ public final class ObfuscationPipeline {
                         .toList();
                     Logger.success("String obfuscation applied");
                 }
+                if (config.flowObfuscationEnabled()) {
+                    Logger.step("Step %d/%d: Flow obfuscation", stepNum++, totalSteps);
+                    FlowObfuscator fo = config.flowKeyRandom() ? FlowObfuscator.withRandomKey() : new FlowObfuscator();
+                    classesToWrite = classesToWrite.stream()
+                        .map(ce -> new ClassEntry(ce.path(), ce.internalName(), fo.transform(ce.bytes())))
+                        .toList();
+                    Logger.success("Flow obfuscation applied");
+                }
                 if (config.debugInfoStrippingEnabled()) {
                     Logger.step("Step %d/%d: Debug info stripping", stepNum++, totalSteps);
                     DebugInfoStripper dis = new DebugInfoStripper();
@@ -153,9 +168,10 @@ public final class ObfuscationPipeline {
         boolean arrayObfEnabled = config.arrayObfuscationEnabled();
         boolean booleanObfEnabled = config.booleanObfuscationEnabled();
         boolean stringObfEnabled = config.stringObfuscationEnabled();
+        boolean flowObfEnabled = config.flowObfuscationEnabled();
         boolean debugInfoStrippingEnabled = config.debugInfoStrippingEnabled();
         int totalSteps = 2 + (methodObfEnabled ? 1 : 0) + (fieldObfEnabled ? 1 : 0) + (numberObfEnabled ? 1 : 0) + (arrayObfEnabled ? 1 : 0)
-            + (booleanObfEnabled ? 1 : 0) + (stringObfEnabled ? 1 : 0) + (debugInfoStrippingEnabled ? 1 : 0);
+            + (booleanObfEnabled ? 1 : 0) + (stringObfEnabled ? 1 : 0) + (flowObfEnabled ? 1 : 0) + (debugInfoStrippingEnabled ? 1 : 0);
         int stepNum = 1;
 
         MethodMapping methodMapping = null;
@@ -202,6 +218,9 @@ public final class ObfuscationPipeline {
         StringObfuscator stringObfuscator = stringObfEnabled
             ? (config.stringKeyRandom() ? StringObfuscator.withRandomKey() : new StringObfuscator())
             : null;
+        FlowObfuscator flowObfuscator = flowObfEnabled
+            ? (config.flowKeyRandom() ? FlowObfuscator.withRandomKey() : new FlowObfuscator())
+            : null;
         List<ClassEntry> transformed = new ArrayList<>();
         int renamedCount = 0;
         for (ClassEntry ce : contents.classes()) {
@@ -212,6 +231,8 @@ public final class ObfuscationPipeline {
                 renamedCount++;
             }
             byte[] bytes = ce.bytes();
+            String cn = ce.internalName().replace('/', '.');
+            Logger.info("  Transforming: %s", cn);
             if (methodObfEnabled) {
                 bytes = methodRenamer.transform(bytes);
             }
@@ -230,6 +251,26 @@ public final class ObfuscationPipeline {
             }
             if (stringObfEnabled) {
                 bytes = stringObfuscator.transform(bytes);
+            }
+            if (flowObfEnabled) {
+                try {
+                    Logger.flowTransform("  Flow transform: %s ...", cn);
+                    ExecutorService exec = Executors.newSingleThreadExecutor();
+                    byte[] inputBytes = bytes;
+                    Future<byte[]> future = exec.submit(() -> flowObfuscator.transform(inputBytes));
+                    try {
+                        bytes = future.get(30, TimeUnit.SECONDS);
+                        Logger.flowTransform("  Flow transform: %s OK", cn);
+                    } catch (TimeoutException e) {
+                        future.cancel(true);
+                        Logger.warn(String.format("  Flow obfuscation timed out for %s (skipped)", cn));
+                    } finally {
+                        exec.shutdownNow();
+                    }
+                } catch (Throwable ex) {
+                    Logger.warn(String.format("  Flow obfuscation skipped for %s: %s", cn, ex.getMessage()));
+                    ex.printStackTrace(System.err);
+                }
             }
             if (debugInfoStrippingEnabled) {
                 bytes = new DebugInfoStripper().transform(bytes);
@@ -254,6 +295,10 @@ public final class ObfuscationPipeline {
         if (stringObfEnabled) {
             Logger.step("Step %d/%d: String obfuscation", stepNum++, totalSteps);
             Logger.success("String obfuscation applied");
+        }
+        if (flowObfEnabled) {
+            Logger.step("Step %d/%d: Flow obfuscation", stepNum++, totalSteps);
+            Logger.success("Flow obfuscation applied");
         }
         if (debugInfoStrippingEnabled) {
             Logger.step("Step %d/%d: Debug info stripping", stepNum++, totalSteps);

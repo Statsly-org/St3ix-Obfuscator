@@ -14,6 +14,7 @@ public record ObfuscatorConfig(
     boolean arrayObfuscationEnabled,
     boolean booleanObfuscationEnabled,
     boolean stringObfuscationEnabled,
+    boolean flowObfuscationEnabled,
     boolean debugInfoStrippingEnabled,
     boolean classNamesRandom,
     int classNameLength,
@@ -31,6 +32,7 @@ public record ObfuscatorConfig(
     boolean arrayKeyRandom,
     boolean booleanKeyRandom,
     boolean stringKeyRandom,
+    boolean flowKeyRandom,
     List<String> excludeClasses
 ) {
     private static final int DEFAULT_CLASS_NAME_LENGTH = 6;
@@ -49,10 +51,10 @@ public record ObfuscatorConfig(
     }
 
     public static ObfuscatorConfig defaults() {
-        return new ObfuscatorConfig(true, true, true, true, true, true, true, true,
+        return new ObfuscatorConfig(true, true, true, true, true, true, true, false, true,
             false, DEFAULT_CLASS_NAME_LENGTH, false, false,
             false, DEFAULT_METHOD_NAME_LENGTH, false, false,
             false, DEFAULT_FIELD_NAME_LENGTH, false, false,
-            false, false, false, false, List.of());
+            false, false, false, false, false, List.of());
     }
 }

@@ -12,6 +12,8 @@ public final class DemoService {
         counter++;
         String message = buildMessage("Hello", "World");
         System.out.println(message);
+        int hash = computeHash(42);
+        System.out.println("Hash(42)=" + hash);
         processData(42, true);
         printMagicNumbers();
         printArrayDemo();
@@ -58,5 +60,16 @@ public final class DemoService {
 
     public String getSecretKey() {
         return SECRET_KEY;
+    }
+
+    /**
+     * Linear method for flow obfuscation demo: pure arithmetic chain.
+     */
+    public int computeHash(int x) {
+        int a = x * 31;
+        int b = a + 17;
+        int c = b / 7;
+        int d = c - 3;
+        return d * 11;
     }
 }

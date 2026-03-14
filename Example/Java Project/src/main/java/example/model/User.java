@@ -32,4 +32,13 @@ public final class User {
     public String toString() {
         return "User{name='" + name + "', id=" + id + "}";
     }
+
+    /**
+     * Linear method for flow obfuscation demo: builds display string without branches.
+     */
+    public String toDisplayString() {
+        String part1 = name + "#";
+        String part2 = part1 + id;
+        return part2;
+    }
 }

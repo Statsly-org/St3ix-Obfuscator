@@ -25,7 +25,7 @@ tasks.jar {
     }
 }
 
-val obfuscatorJar = file("../../build/dist/st3ix-obfuscator.jar")
+val obfuscatorJar = file("../../build/dist/st3ix-obfuscator-v1.0.3.jar")
 
 tasks.register<JavaExec>("obfuscate") {
     dependsOn(tasks.jar)
