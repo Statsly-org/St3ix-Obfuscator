@@ -17,7 +17,7 @@
 - **Number obfuscation** – Hides `int` constants via math expressions (`123` → `(50*3)-27`, `(a<<n)+b`, etc.); decompilers show expressions, not literals. `long`/`float`/`double` still use XOR. Less prone to constant folding than simple XOR.
 - **Array dimension obfuscation** – Hides array sizes (`new int[8]` → `new int[(8 ^ key) ^ key]`)
 - **Boolean obfuscation** – Hides `true`/`false` literals using XOR (`ICONST_0`/`ICONST_1` → `(value ^ key) ^ key`)
-- **String obfuscation** – Encrypts string literals using XOR; **decryption inlined at each use site** (no central decoder class). **Key per class and per string**: each string uses `key ^ class.hashCode() ^ index`, so no global key and different strings get different keys. Strong against `strings`-tools and casual inspection. **Note:** Determined reversers can still trace decryption logic – obfuscation raises the bar, not unbreakable.
+- **String obfuscation** – XOR encryption; inline decrypt at each use site (no central decoder). Key per class and per string/field. **Static final String fields**: ConstantValue removed; initialized in &lt;clinit&gt; with obfuscated code, so `private static final String KEY = "secret"` never appears as readable text. Strong against `strings`-tools and casual inspection.
 - **Optional random keys** – `numberKeyRandom`, `arrayKeyRandom`, `booleanKeyRandom`, `stringKeyRandom` for different keys/patterns per build
 - **Debug info stripping** – Removes source file names, line number table, and local variable table. Decompilers show `var0`, `var1`, etc., and lose source mappings. Configurable via `debugInfoStrippingEnabled`.
 
