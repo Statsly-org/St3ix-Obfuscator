@@ -3,22 +3,25 @@ package st3ix.obfuscator.transform;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
- * Obfuscates string literals in bytecode using XOR encryption.
- * Replaces LDC "string" with inline decryption bytecode at each call site.
- * No central decoder class – no single point to hook and dump all strings.
- * Key per class (owner.hashCode) and per string (index in method) for stronger obfuscation.
+ * Obfuscates string literals using XOR encryption.
+ * Replaces LDC "string" with inline decryption at each use site (no central decoder).
+ * Also handles static final String fields: removes ConstantValue and initializes via
+ * obfuscated code in &lt;clinit&gt;, so API keys and secrets are never readable.
+ * Key per class and per string/field for stronger obfuscation.
  */
 public final class StringObfuscator {
 
-    /** Local variable indices for inline decrypt (high to avoid clashes with method params). */
     private static final int LOCAL_ENC = 100;
     private static final int LOCAL_KEY = 101;
     private static final int LOCAL_OUT = 102;
@@ -29,16 +32,10 @@ public final class StringObfuscator {
 
     private final int key;
 
-    /**
-     * Creates an obfuscator with default (fixed) key.
-     */
     public StringObfuscator() {
         this.key = DEFAULT_KEY;
     }
 
-    /**
-     * Creates an obfuscator with random key (different per instance).
-     */
     public static StringObfuscator withRandomKey() {
         return new StringObfuscator(new Random().nextInt());
     }
@@ -47,11 +44,11 @@ public final class StringObfuscator {
         this.key = key;
     }
 
-    /**
-     * Encrypts a string to a byte array using XOR.
-     */
-    public byte[] encrypt(String s) {
-        return encrypt(s, key);
+    public byte[] transform(byte[] classBytes) {
+        ClassReader reader = new ClassReader(classBytes);
+        ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
+        reader.accept(new StringObfuscatorClassVisitor(writer, key), ClassReader.EXPAND_FRAMES);
+        return writer.toByteArray();
     }
 
     private static byte[] encrypt(String s, int key) {
@@ -63,20 +60,12 @@ public final class StringObfuscator {
         return out;
     }
 
-    /**
-     * Transforms the class bytes, obfuscating string literals.
-     */
-    public byte[] transform(byte[] classBytes) {
-        ClassReader reader = new ClassReader(classBytes);
-        ClassWriter writer = new ClassWriter(reader, ClassWriter.COMPUTE_FRAMES);
-        reader.accept(new StringObfuscatorClassVisitor(writer, key), ClassReader.EXPAND_FRAMES);
-        return writer.toByteArray();
-    }
-
     private static final class StringObfuscatorClassVisitor extends ClassVisitor {
 
         private final int key;
         private String owner;
+        private final List<StaticStringField> staticStringFields = new ArrayList<>();
+        private boolean hasClinit;
 
         StringObfuscatorClassVisitor(ClassVisitor cv, int key) {
             super(Opcodes.ASM9, cv);
@@ -90,10 +79,78 @@ public final class StringObfuscator {
         }
 
         @Override
+        public org.objectweb.asm.FieldVisitor visitField(int access, String name, String descriptor,
+                                                          String signature, Object value) {
+            if ("Ljava/lang/String;".equals(descriptor)
+                    && (access & Opcodes.ACC_STATIC) != 0
+                    && (access & Opcodes.ACC_FINAL) != 0
+                    && value instanceof String s) {
+                staticStringFields.add(new StaticStringField(name, s));
+                return super.visitField(access, name, descriptor, signature, null);
+            }
+            return super.visitField(access, name, descriptor, signature, value);
+        }
+
+        @Override
         public MethodVisitor visitMethod(int access, String name, String descriptor,
                                          String signature, String[] exceptions) {
             MethodVisitor mv = super.visitMethod(access, name, descriptor, signature, exceptions);
+            if ("<clinit>".equals(name) && !staticStringFields.isEmpty()) {
+                hasClinit = true;
+                return new ClinitPrepender(mv, key, owner, staticStringFields);
+            }
             return new StringObfuscatorMethodVisitor(mv, key, owner);
+        }
+
+        @Override
+        public void visitEnd() {
+            if (!staticStringFields.isEmpty() && !hasClinit) {
+                MethodVisitor mv = super.visitMethod(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
+                if (mv != null) {
+                    mv.visitCode();
+                    emitStaticFieldInits(mv, key, owner, staticStringFields);
+                    mv.visitInsn(Opcodes.RETURN);
+                    mv.visitMaxs(0, 0);
+                    mv.visitEnd();
+                }
+            }
+            super.visitEnd();
+        }
+
+        private record StaticStringField(String name, String value) {}
+    }
+
+    private static final class ClinitPrepender extends MethodVisitor {
+
+        private final int key;
+        private final String owner;
+        private final List<StringObfuscatorClassVisitor.StaticStringField> fields;
+
+        ClinitPrepender(MethodVisitor mv, int key, String owner,
+                        List<StringObfuscatorClassVisitor.StaticStringField> fields) {
+            super(Opcodes.ASM9, mv);
+            this.key = key;
+            this.owner = owner;
+            this.fields = fields;
+        }
+
+        @Override
+        public void visitCode() {
+            emitStaticFieldInits(this, key, owner, fields);
+            super.visitCode();
+        }
+    }
+
+    private static void emitStaticFieldInits(MethodVisitor mv, int key, String owner,
+                                            List<StringObfuscatorClassVisitor.StaticStringField> fields) {
+        for (int i = 0; i < fields.size(); i++) {
+            var f = fields.get(i);
+            int actualKey = key ^ owner.hashCode() ^ i;
+            byte[] enc = encrypt(f.value(), actualKey);
+            emitRuntimeKey(mv, owner, key ^ i);
+            emitByteArray(mv, enc);
+            emitInlineDecrypt(mv);
+            mv.visitFieldInsn(Opcodes.PUTSTATIC, owner, f.name(), "Ljava/lang/String;");
         }
     }
 
@@ -112,25 +169,21 @@ public final class StringObfuscator {
         @Override
         public void visitLdcInsn(Object value) {
             if (value instanceof String s) {
-                emitEncryptedString(s);
+                int idx = stringIndex++;
+                int actualKey = key ^ owner.hashCode() ^ idx;
+                byte[] encrypted = encrypt(s, actualKey);
+                emitRuntimeKey(idx);
+                emitByteArray(encrypted);
+                emitInlineDecrypt();
             } else {
                 super.visitLdcInsn(value);
             }
         }
 
-        private void emitEncryptedString(String s) {
-            int idx = stringIndex++;
-            int actualKey = key ^ owner.hashCode() ^ idx;
-            byte[] encrypted = encrypt(s, actualKey);
-            emitByteArray(encrypted);
-            emitRuntimeKey(idx);
-            emitInlineDecrypt();
-        }
-
-        /** Inline XOR decrypt: stack [byte[] encrypted, int key] -> stack [String]. No central decoder. */
         private void emitInlineDecrypt() {
-            org.objectweb.asm.Label loopStart = new org.objectweb.asm.Label();
-            org.objectweb.asm.Label loopEnd = new org.objectweb.asm.Label();
+            Label loopStart = new Label();
+            Label loopEnd = new Label();
+            // Stack: [key, byte[]] - top is byte[], store it first (ASTORE), then key (ISTORE)
             super.visitVarInsn(Opcodes.ASTORE, LOCAL_ENC);
             super.visitVarInsn(Opcodes.ISTORE, LOCAL_KEY);
             super.visitVarInsn(Opcodes.ALOAD, LOCAL_ENC);
@@ -169,7 +222,6 @@ public final class StringObfuscator {
             super.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>", "([BLjava/nio/charset/Charset;)V", false);
         }
 
-        /** Emits: (key ^ stringIndex) ^ thisClass.getName().hashCode() = actualKey per class and per string */
         private void emitRuntimeKey(int stringIndex) {
             super.visitLdcInsn(Type.getObjectType(owner));
             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
@@ -193,5 +245,70 @@ public final class StringObfuscator {
                 super.visitInsn(Opcodes.BASTORE);
             }
         }
+    }
+
+    private static void emitByteArray(MethodVisitor mv, byte[] bytes) {
+        mv.visitLdcInsn(bytes.length);
+        mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE);
+        for (int i = 0; i < bytes.length; i++) {
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(i);
+            int b = bytes[i] & 0xFF;
+            if (b <= 127) {
+                mv.visitIntInsn(Opcodes.BIPUSH, b);
+            } else {
+                mv.visitIntInsn(Opcodes.SIPUSH, b);
+            }
+            mv.visitInsn(Opcodes.BASTORE);
+        }
+    }
+
+    private static void emitRuntimeKey(MethodVisitor mv, String owner, int actualKey) {
+        mv.visitLdcInsn(Type.getObjectType(owner));
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
+        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "hashCode", "()I", false);
+        mv.visitLdcInsn(actualKey);
+        mv.visitInsn(Opcodes.IXOR);
+    }
+
+    private static void emitInlineDecrypt(MethodVisitor mv) {
+        Label loopStart = new Label();
+        Label loopEnd = new Label();
+        mv.visitVarInsn(Opcodes.ASTORE, LOCAL_ENC);
+        mv.visitVarInsn(Opcodes.ISTORE, LOCAL_KEY);
+        mv.visitVarInsn(Opcodes.ALOAD, LOCAL_ENC);
+        mv.visitInsn(Opcodes.ARRAYLENGTH);
+        mv.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE);
+        mv.visitVarInsn(Opcodes.ASTORE, LOCAL_OUT);
+        mv.visitInsn(Opcodes.ICONST_0);
+        mv.visitVarInsn(Opcodes.ISTORE, LOCAL_I);
+        mv.visitLabel(loopStart);
+        mv.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+        mv.visitVarInsn(Opcodes.ALOAD, LOCAL_ENC);
+        mv.visitInsn(Opcodes.ARRAYLENGTH);
+        mv.visitJumpInsn(Opcodes.IF_ICMPGE, loopEnd);
+        mv.visitVarInsn(Opcodes.ALOAD, LOCAL_ENC);
+        mv.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+        mv.visitInsn(Opcodes.BALOAD);
+        mv.visitVarInsn(Opcodes.ILOAD, LOCAL_KEY);
+        mv.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+        mv.visitInsn(Opcodes.IADD);
+        mv.visitIntInsn(Opcodes.SIPUSH, 255);
+        mv.visitInsn(Opcodes.IAND);
+        mv.visitInsn(Opcodes.IXOR);
+        mv.visitInsn(Opcodes.I2B);
+        mv.visitVarInsn(Opcodes.ISTORE, LOCAL_BYTE);
+        mv.visitVarInsn(Opcodes.ALOAD, LOCAL_OUT);
+        mv.visitVarInsn(Opcodes.ILOAD, LOCAL_I);
+        mv.visitVarInsn(Opcodes.ILOAD, LOCAL_BYTE);
+        mv.visitInsn(Opcodes.BASTORE);
+        mv.visitIincInsn(LOCAL_I, 1);
+        mv.visitJumpInsn(Opcodes.GOTO, loopStart);
+        mv.visitLabel(loopEnd);
+        mv.visitTypeInsn(Opcodes.NEW, "java/lang/String");
+        mv.visitInsn(Opcodes.DUP);
+        mv.visitVarInsn(Opcodes.ALOAD, LOCAL_OUT);
+        mv.visitFieldInsn(Opcodes.GETSTATIC, "java/nio/charset/StandardCharsets", "UTF_8", "Ljava/nio/charset/Charset;");
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>", "([BLjava/nio/charset/Charset;)V", false);
     }
 }
