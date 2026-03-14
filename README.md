@@ -17,14 +17,17 @@ A Java bytecode obfuscator that transforms JAR files to make decompilation harde
 # Build the obfuscator (JAR + scripts)
 ./gradlew dist    # → build/dist/
 
-# Obfuscate a JAR (output goes to build/dist/Obfuscate/)
+# Open the GUI (works on Linux, macOS, Windows)
+java -jar build/dist/st3ix-obfuscator.jar
+
+# Obfuscate a JAR via CLI (output goes to build/dist/Obfuscate/)
 java -jar build/dist/st3ix-obfuscator.jar -i myapp.jar -o myapp-obfuscated.jar
 
 # Run the result
 java -jar build/dist/Obfuscate/myapp-obfuscated.jar
 ```
 
-**Windows:** Use `gradlew.bat` for building. For the GUI, run `run.bat` from `build/dist/` or double-click the JAR.
+**Windows:** Use `gradlew.bat` for building. You can also run `run.bat` from `build/dist/` or double-click the JAR for the GUI. **Linux/macOS:** The `java -jar` command is the recommended way to start the GUI, since `run.bat` is Windows-only.
 
 Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zum Starten, Config-Beispiel, Images.
 
@@ -42,7 +45,7 @@ Bei jedem Release gibt es ein ZIP-Archiv mit allem Nötigen: JAR, Batch-Datei zu
 - **Local variable renaming** *(planned)* – Obfuscate local variable names when debug kept
 - **Random options** – Optional random keys and class/method/field names per build
 - **Exclude patterns** – Skip JDK, Bukkit, Minecraft, and custom packages
-- **GUI** – Graphical interface for obfuscation (`run.bat`)
+- **GUI** – Graphical interface; start with `java -jar st3ix-obfuscator.jar` (or `run.bat` on Windows)
 - **YAML config** – `config.yml` next to the JAR
 
 See [Features.md](Features.md) for the full list of current and planned features.
